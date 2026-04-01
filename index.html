@@ -128,6 +128,23 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .release-items{list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:4px;}
 .release-items li{font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5;}
 .release-items li::before{content:'·';color:var(--text-tertiary);flex-shrink:0;}
+.email-modal{width:400px;}
+.email-modal textarea{font-size:12px;padding:8px 10px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-secondary);color:var(--text-primary);font-family:var(--font-mono,monospace);width:100%;outline:none;resize:vertical;min-height:72px;line-height:1.5;}
+.email-progress{display:flex;flex-direction:column;gap:8px;padding:4px 0;}
+.email-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-tertiary);}
+.email-step.active{color:var(--text-primary);}
+.email-step.done{color:#1D9E75;}
+.email-step.error{color:#A32D2D;}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--bg-tertiary);border:1.5px solid var(--border-mid);flex-shrink:0;}
+.email-step.active .step-dot{background:#BA7517;border-color:#BA7517;animation:pulse 1s infinite;}
+.email-step.done .step-dot{background:#1D9E75;border-color:#1D9E75;}
+.email-step.error .step-dot{background:#A32D2D;border-color:#A32D2D;}
+.task-preview{background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+.task-preview-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-primary);line-height:1.4;}
+.task-preview-prio{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500;flex-shrink:0;margin-top:1px;}
+.token-help{font-size:11px;color:var(--text-tertiary);line-height:1.6;}
+.token-help a{color:var(--text-secondary);}
+.token-help code{background:var(--bg-tertiary);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:10px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
@@ -179,9 +196,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
         Nieuwe lijst
       </button>
+      <button class="add-list-btn" id="email-import-btn" onclick="openEmailImport()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="12" height="9" rx="1"/><polyline points="1,3 7,8 13,3"/></svg>
+        Email → Taken
+      </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.6.0</span>
+      <span class="version-label">v1.7.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -540,7 +561,11 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'1.6.0', date:'2025-04-01', latest:true,
+      version:'1.7.0', date:'2026-04-01', latest:true,
+      notes:['Email → Taken knop in de sidebar','Haalt emails van vandaag op via Microsoft Graph','Claude analyseert automatisch actiepunten en prioriteiten','Taken worden direct in de Email lijst opgeslagen','Preview stap: taken bekijken voor ze worden toegevoegd']
+    },
+    {
+      version:'1.6.0', date:'2026-04-01',
       notes:['Themaschakelaar vereenvoudigd: alleen licht en donker','Schuifregelaar vervangt de drie-standen knop']
     },
     {
@@ -593,6 +618,196 @@ setInterval(async()=>{
   const [lists,tasks]=await Promise.all([sb('lists?select=*&order=position.asc,created_at.asc'),sb('tasks?select=*&order=position.asc,created_at.asc')]);
   if(lists)state.lists=lists;if(tasks)state.tasks=tasks;render();
 },15000);
+
+// ── Email → Taken ───────────────────────────────────────
+const ANTHROPIC_KEY = 'sk-ant-api03-VERVANG-DIT-MET-JOUW-KEY';
+const GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0';
+
+let emailToken = sessionStorage.getItem('ms_token') || '';
+
+function openEmailImport(){
+  renderEmailModal('token');
+}
+
+function renderEmailModal(stage, data={}){
+  const mc = document.getElementById('modal-container');
+  if(stage === 'token'){
+    mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
+      <h3>Email → Taken</h3>
+      <div>
+        <label>Microsoft Graph access token</label>
+        <textarea id="ms-token-input" placeholder="eyJ0eXAiOiJKV1Qi..." rows="3">${esc(emailToken)}</textarea>
+        <div class="token-help" style="margin-top:8px">
+          Haal je token op via <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank">Graph Explorer</a>:<br>
+          1. Log in → kopieer het token via <code>Access token</code> tab<br>
+          2. Het token is ~1 uur geldig en wordt lokaal opgeslagen
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+        <button class="btn-primary" onclick="startEmailImport()">Emails ophalen</button>
+      </div>
+    </div></div>`;
+    setTimeout(()=>{
+      const el=document.getElementById('ms-token-input');
+      if(el&&!emailToken){el.focus();}
+    },0);
+  } else if(stage === 'progress'){
+    const steps = data.steps||[];
+    mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
+      <h3>Email → Taken</h3>
+      <div class="email-progress">
+        ${steps.map(s=>`<div class="email-step ${s.status}" id="step-${s.id}">
+          <div class="step-dot"></div><span>${esc(s.label)}</span>
+        </div>`).join('')}
+      </div>
+    </div></div>`;
+  } else if(stage === 'preview'){
+    const tasks = data.tasks||[];
+    mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
+      <h3>${tasks.length} taken gevonden</h3>
+      <div class="task-preview">
+        ${tasks.map(t=>{
+          const cls={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
+          const lbl={high:'Hoog',medium:'Med',low:'Laag',none:''}[t.priority]||'';
+          return `<div class="task-preview-item">
+            ${lbl?`<span class="task-preview-prio ${cls}">${lbl}</span>`:'<span style="width:28px;flex-shrink:0"></span>'}
+            <span>${esc(t.text)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+        <button class="btn-primary" onclick="confirmEmailTasks(${JSON.stringify(tasks).replace(/"/g,'&quot;')})">Toevoegen aan lijst</button>
+      </div>
+    </div></div>`;
+  }
+}
+
+function setStep(id, status, label){
+  const el=document.getElementById('step-'+id);
+  if(!el)return;
+  el.className='email-step '+status;
+  if(label)el.querySelector('span').textContent=label;
+}
+
+async function startEmailImport(){
+  const inp=document.getElementById('ms-token-input');
+  const token=(inp?inp.value:emailToken).trim();
+  if(!token){showToast('Vul een access token in');return;}
+  emailToken=token;
+  sessionStorage.setItem('ms_token',token);
+
+  const steps=[
+    {id:'fetch', label:'Emails ophalen van vandaag...', status:'active'},
+    {id:'ai',    label:'Actiepunten analyseren...', status:''},
+    {id:'save',  label:'Taken opslaan...', status:''},
+  ];
+  renderEmailModal('progress',{steps});
+
+  // Step 1: fetch today's emails from Graph
+  let emails=[];
+  try{
+    const today=new Date();
+    today.setHours(0,0,0,0);
+    const iso=today.toISOString();
+    const res=await fetch(`${GRAPH_ENDPOINT}/me/messages?$filter=receivedDateTime ge ${iso}&$select=subject,sender,bodyPreview&$top=30&$orderby=receivedDateTime desc`,{
+      headers:{Authorization:'Bearer '+token}
+    });
+    if(!res.ok){
+      const err=await res.text();
+      if(res.status===401){setStep('fetch','error','Token verlopen of ongeldig');return;}
+      setStep('fetch','error','Fout bij ophalen: '+res.status);return;
+    }
+    const json=await res.json();
+    emails=json.value||[];
+    setStep('fetch','done',`${emails.length} emails opgehaald`);
+  }catch(e){
+    setStep('fetch','error','Netwerkfout: '+e.message);return;
+  }
+
+  if(!emails.length){
+    setStep('ai','done','Geen emails vandaag');
+    setStep('save','done','Klaar');
+    setTimeout(closeModal,1500);return;
+  }
+
+  // Step 2: send to Claude
+  setStep('ai','active','Actiepunten analyseren...');
+  let tasks=[];
+  try{
+    const emailSummary=emails.map(e=>`Van: ${e.sender?.emailAddress?.name||''} <${e.sender?.emailAddress?.address||''}>\nOnderwerp: ${e.subject}\nSamenvatting: ${e.bodyPreview?.slice(0,300)||''}`).join('\n\n---\n\n');
+
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`Je bent een assistent die emails analyseert en concrete actiepunten extraheert voor de ontvanger (Bas Sperling). 
+Geef ALLEEN taken terug die een concrete actie vereisen van Bas. Geen nieuwsbrieven, notificaties, of puur informatieve emails.
+Antwoord ALLEEN met geldig JSON in dit formaat, zonder uitleg, markdown of backticks:
+{"tasks":[{"text":"korte taakbeschrijving","priority":"high|medium|low|none"}]}
+Prioriteit high = urgent/deadline/expliciete vraag, medium = opvolging nodig, low = nice to have, none = geen prioriteit.
+Max 10 taken. Wees beknopt (max 80 tekens per taak).`,
+        messages:[{role:'user',content:`Analyseer deze emails van vandaag en extraheer actiepunten:\n\n${emailSummary}`}]
+      })
+    });
+    if(!res.ok){setStep('ai','error','Claude API fout: '+res.status);return;}
+    const json=await res.json();
+    const text=json.content?.[0]?.text||'{}';
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    tasks=parsed.tasks||[];
+    setStep('ai','done',`${tasks.length} actiepunten gevonden`);
+  }catch(e){
+    setStep('ai','error','Analysefout: '+e.message);return;
+  }
+
+  if(!tasks.length){
+    setStep('save','done','Geen actiepunten gevonden');
+    setTimeout(closeModal,1500);return;
+  }
+
+  // Show preview
+  renderEmailModal('preview',{tasks});
+}
+
+async function confirmEmailTasks(tasks){
+  // Find or create Email list
+  renderEmailModal('progress',{steps:[
+    {id:'list', label:'Email lijst ophalen...', status:'active'},
+    {id:'tasks', label:'Taken aanmaken...', status:''},
+  ]});
+
+  let listId=null;
+  try{
+    // Check if Email list exists
+    let emailList=state.lists.find(l=>l.name==='Email');
+    if(!emailList){
+      const res=await sb('lists',{method:'POST',body:{name:'Email',color:'#378ADD',position:state.lists.length}});
+      if(!res||!res[0]){setStep('list','error','Kon lijst niet aanmaken');return;}
+      emailList=res[0];
+      state.lists.push(emailList);
+    }
+    listId=emailList.id;
+    setStep('list','done','Email lijst gevonden');
+  }catch(e){setStep('list','error',e.message);return;}
+
+  // Save tasks
+  setStep('tasks','active',`${tasks.length} taken opslaan...`);
+  try{
+    const currentPos=state.tasks.filter(t=>t.list_id===listId).length;
+    for(let i=0;i<tasks.length;i++){
+      const t=tasks[i];
+      const res=await sb('tasks',{method:'POST',body:{list_id:listId,text:t.text,priority:t.priority||'none',done:false,position:currentPos+i}});
+      if(res&&res[0])state.tasks.push(res[0]);
+    }
+    setStep('tasks','done',`${tasks.length} taken aangemaakt`);
+    state.activeListId=listId;
+    state.globalView=null;
+    setTimeout(()=>{closeModal();render();showToast(`${tasks.length} taken toegevoegd aan Email`);},800);
+  }catch(e){setStep('tasks','error',e.message);}
+}
 
 loadAll();
 </script>

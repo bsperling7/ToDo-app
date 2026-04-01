@@ -50,7 +50,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .sublists.collapsed{display:none;}
 .add-sublist-btn{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 10px;border-radius:var(--radius-md);cursor:pointer;font-size:11px;color:var(--text-tertiary);border:none;background:none;width:100%;text-align:left;font-family:var(--font);}
 .add-sublist-btn:hover{color:var(--text-secondary);background:var(--bg-primary);}
-#wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg-primary);position:relative;}
+.global-filters{padding:6px 8px 2px;}
+.global-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary);border:0.5px solid transparent;background:none;width:100%;text-align:left;transition:background .1s;}
+.global-item:hover{background:var(--bg-primary);color:var(--text-primary);}
+.global-item.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border-color:var(--border-mid);}
+.global-item .count{margin-left:auto;font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 6px;border-radius:10px;}
+.list-divider{font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.07em;text-transform:uppercase;padding:10px 8px 4px;}
+.task-list-label{font-size:10px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;margin-top:2px;}
 #topbar{padding:16px 20px 12px;border-bottom:0.5px solid var(--border-light);display:flex;flex-direction:column;gap:10px;}
 .list-header{display:flex;align-items:center;gap:10px;}
 .breadcrumb{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:3px;margin-bottom:3px;}
@@ -125,6 +131,29 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </div>
     </div>
     <div id="list-nav"></div>
+    <div class="global-filters">
+      <div class="list-divider">Overzicht</div>
+      <button class="global-item" id="global-all-btn" onclick="setGlobalView('all')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+        Alle taken
+        <span class="count" id="global-all-count"></span>
+      </button>
+      <button class="global-item" id="global-high-btn" onclick="setGlobalView('high')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="7,2 7,8"/><circle cx="7" cy="11" r="1" fill="currentColor" stroke="none"/></svg>
+        Hoge prioriteit
+        <span class="count" id="global-high-count"></span>
+      </button>
+      <button class="global-item" id="global-open-btn" onclick="setGlobalView('open')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/></svg>
+        Alle open taken
+        <span class="count" id="global-open-count"></span>
+      </button>
+      <button class="global-item" id="global-done-btn" onclick="setGlobalView('done')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><polyline points="4.5,7 6.5,9 9.5,5"/></svg>
+        Afgerond
+        <span class="count" id="global-done-count"></span>
+      </button>
+    </div>
     <div class="sidebar-bottom">
       <button class="add-list-btn" onclick="openNewListModal(null)">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
@@ -157,10 +186,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 <script>
 const SUPABASE_URL='https://kgoytwcdyeoxascdtnml.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtnb3l0d2NkeWVveGFzY2R0bm1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ4NjgsImV4cCI6MjA5MDYyMDg2OH0.6qP5tYIGdgplNMlobemx3ytVOWX4Bzv2K--n3iuSY_Q';
-const COLORS=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517'];
+const COLORS=[
+  '#7F77DD','#534AB7','#AFA9EC',
+  '#1D9E75','#0F6E56','#5DCAA5',
+  '#D85A30','#993C1D','#F0997B',
+  '#378ADD','#185FA5','#85B7EB',
+  '#D4537E','#993556','#ED93B1',
+  '#BA7517','#854F0B','#EF9F27',
+  '#888780','#444441','#B4B2A9',
+];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{}};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{}};
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
@@ -320,6 +357,18 @@ function renderListItem(list){
 function renderSidebar(){
   const top=state.lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
   document.getElementById('list-nav').innerHTML=top.map(l=>renderListItem(l)).join('');
+  // Global counts
+  const all=state.tasks.length;
+  const high=state.tasks.filter(t=>t.priority==='high'&&!t.done).length;
+  const open=state.tasks.filter(t=>!t.done).length;
+  const done=state.tasks.filter(t=>t.done).length;
+  document.getElementById('global-all-count').textContent=all||'';
+  document.getElementById('global-high-count').textContent=high||'';
+  document.getElementById('global-open-count').textContent=open||'';
+  document.getElementById('global-done-count').textContent=done||'';
+  ['all','high','open','done'].forEach(v=>{
+    document.getElementById('global-'+v+'-btn').classList.toggle('active',state.globalView===v);
+  });
 }
 function toggleExpand(id,e){e.stopPropagation();state.expanded[id]=state.expanded[id]===false;renderSidebar();}
 
@@ -329,6 +378,12 @@ function getBreadcrumb(id){
   return c;
 }
 function renderTopbar(){
+  if(state.globalView){
+    const labels={'all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond'};
+    document.getElementById('list-header').innerHTML=`<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
+    document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
+    return;
+  }
   const list=state.lists.find(l=>l.id===state.activeListId);
   if(!list){document.getElementById('list-header').innerHTML='';document.getElementById('filter-row').innerHTML='';return;}
   const crumbs=getBreadcrumb(list.id);
@@ -344,33 +399,48 @@ function renderTopbar(){
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
 }
 function getFiltered(){
-  let t=state.tasks.filter(t=>t.list_id===state.activeListId);
-  if(state.filter==='open')t=t.filter(t=>!t.done);
-  if(state.filter==='done')t=t.filter(t=>t.done);
-  if(state.filter==='high')t=t.filter(t=>t.priority==='high');
+  let t;
+  if(state.globalView){
+    t=state.tasks;
+    if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
+    else if(state.globalView==='open')t=t.filter(t=>!t.done);
+    else if(state.globalView==='done')t=t.filter(t=>t.done);
+  }else{
+    t=state.tasks.filter(t=>t.list_id===state.activeListId);
+    if(state.filter==='open')t=t.filter(t=>!t.done);
+    if(state.filter==='done')t=t.filter(t=>t.done);
+    if(state.filter==='high')t=t.filter(t=>t.priority==='high');
+  }
   if(state.search)t=t.filter(t=>t.text.toLowerCase().includes(state.search.toLowerCase()));
   return t;
 }
-function taskHTML(t){
+function taskHTML(t,showList=false){
   const tc={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
-  return `<div class="task-row ${t.done?'done':''}"><div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div><div class="task-body"><div class="task-text">${esc(t.text)}</div>${t.priority&&t.priority!=='none'?`<div class="task-meta"><span class="tag ${tc}">${PL[t.priority]}</span></div>`:''}</div><div class="task-actions"><button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button><button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button></div></div>`;
+  const list=showList?state.lists.find(l=>l.id===t.list_id):null;
+  const listLabel=list?`<span class="task-list-label"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block;flex-shrink:0"></span>${esc(list.name)}</span>`:'';
+  return `<div class="task-row ${t.done?'done':''}"><div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div><div class="task-body"><div class="task-text">${esc(t.text)}</div><div class="task-meta">${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''} ${listLabel}</div></div><div class="task-actions"><button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button><button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button></div></div>`;
 }
 function renderTasks(){
   const area=document.getElementById('task-area');
   if(state.loading){area.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';return;}
-  if(!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
+  const isGlobal=!!state.globalView;
+  if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
   const f=getFiltered();
   if(!f.length){area.innerHTML='<div class="empty-state"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="4" width="24" height="24" rx="4"/><line x1="10" y1="12" x2="22" y2="12"/><line x1="10" y1="17" x2="18" y2="17"/><line x1="10" y1="22" x2="15" y2="22"/></svg><span>Geen taken gevonden</span></div>';return;}
   const open=f.filter(t=>!t.done).sort((a,b)=>PO[a.priority]-PO[b.priority]);
   const done=f.filter(t=>t.done);
   let h='';
-  if(open.length)h+=`<div class="section-header">Open <span style="font-weight:400">${open.length}</span></div>`+open.map(taskHTML).join('');
-  if(done.length)h+=`<div class="section-header">Afgerond <span style="font-weight:400">${done.length}</span></div>`+done.map(taskHTML).join('');
+  if(open.length)h+=`<div class="section-header">Open <span style="font-weight:400">${open.length}</span></div>`+open.map(t=>taskHTML(t,isGlobal)).join('');
+  if(done.length)h+=`<div class="section-header">Afgerond <span style="font-weight:400">${done.length}</span></div>`+done.map(t=>taskHTML(t,isGlobal)).join('');
   area.innerHTML=h;
 }
-function render(){renderSidebar();renderTopbar();renderTasks();}
+function render(){
+  renderSidebar();renderTopbar();renderTasks();
+  document.getElementById('add-task-area').style.display=state.globalView?'none':'block';
+}
 
-function selectList(id){state.activeListId=id;state.filter='all';state.search='';state.editingListName=false;render();}
+function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;render();}
+function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;render();}
 function setFilter(f){state.filter=f;render();}
 function setSearch(v){state.search=v;renderTasks();}
 function startEditName(){state.editingListName=true;renderTopbar();}

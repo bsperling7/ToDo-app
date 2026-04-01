@@ -32,7 +32,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .list-item.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border-color:var(--border-mid);}
 .list-item.drag-over{border-color:#7F77DD;}
 .list-item.dragging{opacity:.35;}
-.list-item .count{margin-left:auto;font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 6px;border-radius:10px;flex-shrink:0;}
+.list-item .count{font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 6px;border-radius:10px;flex-shrink:0;}
+.list-item .list-actions{display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .1s;margin-left:auto;}
+.list-item:hover .list-actions{opacity:1;}
+.list-item:hover .count{display:none;}
+.list-item .list-act-btn{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;padding:0;}
+.list-item .list-act-btn:hover{background:var(--bg-tertiary);color:var(--text-secondary);}
 .drag-handle{color:var(--text-tertiary);cursor:grab;opacity:0;flex-shrink:0;display:flex;align-items:center;transition:opacity .1s;}
 .list-item:hover .drag-handle{opacity:1;}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -206,6 +211,11 @@ async function updateListName(id,name){
   await sb('lists?id=eq.'+id,{method:'PATCH',body:{name},prefer:'return=minimal'});
   const l=state.lists.find(l=>l.id===id);if(l)l.name=name;render();
 }
+async function updateList(id,name,color){
+  await sb('lists?id=eq.'+id,{method:'PATCH',body:{name,color},prefer:'return=minimal'});
+  const l=state.lists.find(l=>l.id===id);if(l){l.name=name;l.color=color;}
+  render();showToast('Lijst bijgewerkt');
+}
 async function removeList(id){
   const toDelete=[id];
   const collect=(pid)=>{state.lists.filter(l=>l.parent_id===pid).forEach(l=>{toDelete.push(l.id);collect(l.id);});};
@@ -293,6 +303,10 @@ function renderListItem(list){
       <span class="dot" style="background:${list.color}"></span>
       <span class="list-name-span">${esc(list.name)}</span>
       ${count>0?`<span class="count">${count}</span>`:''}
+      <span class="list-actions">
+        <button class="list-act-btn" onclick="openEditListModal('${list.id}',event)" title="Bewerken"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>
+        <button class="list-act-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button>
+      </span>
     </div>
     <div class="sublists ${expanded?'':'collapsed'}">
       ${children.map(c=>renderListItem(c)).join('')}
@@ -324,7 +338,7 @@ function renderTopbar(){
     header.innerHTML=`<div style="display:flex;flex-direction:column;gap:2px;flex:1">${bc}<input class="list-name-input" id="name-editor" value="${esc(list.name)}" onblur="saveListName()" onkeydown="if(event.key==='Enter')saveListName();if(event.key==='Escape')cancelEditName()"/></div>`;
     setTimeout(()=>{const el=document.getElementById('name-editor');if(el){el.focus();el.select();}},0);
   }else{
-    header.innerHTML=`<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}')" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
+    header.innerHTML=`<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
   }
   const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio']];
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
@@ -374,10 +388,30 @@ async function addTask(){
   const prio=pr.value;inp.value='';pr.value='none';
   await createTask(text,prio);btn.disabled=false;inp.focus();
 }
-function confirmDeleteList(id){
+function confirmDeleteList(id,e){
+  if(e)e.stopPropagation();
   const hasChildren=state.lists.some(l=>l.parent_id===id);
   const msg=hasChildren?'Deze lijst en al zijn sublijsten (inclusief taken) worden verwijderd.':'Alle taken in deze lijst worden ook verwijderd.';
   openConfirmModal('Lijst verwijderen?',msg,()=>removeList(id));
+}
+function openEditListModal(id,e){
+  if(e)e.stopPropagation();
+  const list=state.lists.find(l=>l.id===id);if(!list)return;
+  const opts=COLORS.map(c=>`<span class="color-dot" style="background:${c}${c===list.color?';border-color:#888':''}" onclick="selectColor('${c}',this)" data-color="${c}"></span>`).join('');
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3>Lijst bewerken</h3>
+    <div><label>Naam</label><input id="modal-edit-list-name" value="${esc(list.name)}"/></div>
+    <div><label>Kleur</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${opts}</div></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary" onclick="submitEditList('${id}')">Opslaan</button></div>
+  </div></div>`;
+  document.getElementById('modal-edit-list-name').focus();
+  selectedColor=list.color;
+}
+async function submitEditList(id){
+  const name=document.getElementById('modal-edit-list-name').value.trim();
+  if(!name)return;
+  closeModal();
+  await updateList(id,name,selectedColor);
 }
 function selectColor(c,el){
   selectedColor=c;

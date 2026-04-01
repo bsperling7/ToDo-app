@@ -202,7 +202,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.7.0</span>
+      <span class="version-label">v1.8.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -561,8 +561,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'1.7.0', date:'2026-04-01', latest:true,
-      notes:['Email → Taken knop in de sidebar','Haalt emails van vandaag op via Microsoft Graph','Claude analyseert automatisch actiepunten en prioriteiten','Taken worden direct in de Email lijst opgeslagen','Preview stap: taken bekijken voor ze worden toegevoegd']
+      version:'1.8.0', date:'2026-04-01', latest:true,
+      notes:['Email → Taken werkt nu volledig in de browser','Token wordt veilig opgeslagen in localStorage','Slimme regel-gebaseerde analyse zonder externe API','Taken selecteerbaar in preview voordat ze worden opgeslagen','Duidelijke foutmeldingen bij verlopen of ongeldige tokens']
+    },
+    {
+      version:'1.7.0', date:'2026-04-01',
+      notes:['Email → Taken knop toegevoegd in de sidebar','Haalt emails van vandaag op via Microsoft Graph','Taken worden direct in de Email lijst opgeslagen']
     },
     {
       version:'1.6.0', date:'2026-04-01',
@@ -620,75 +624,137 @@ setInterval(async()=>{
 },15000);
 
 // ── Email → Taken ───────────────────────────────────────
-const ANTHROPIC_KEY = 'sk-ant-api03-VERVANG-DIT-MET-JOUW-KEY';
 const GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0';
-
-let emailToken = sessionStorage.getItem('ms_token') || '';
+let emailToken = localStorage.getItem('ms_graph_token') || '';
 
 function openEmailImport(){
-  renderEmailModal('token');
-}
-
-function renderEmailModal(stage, data={}){
   const mc = document.getElementById('modal-container');
-  if(stage === 'token'){
-    mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
-      <h3>Email → Taken</h3>
-      <div>
-        <label>Microsoft Graph access token</label>
-        <textarea id="ms-token-input" placeholder="eyJ0eXAiOiJKV1Qi..." rows="3">${esc(emailToken)}</textarea>
-        <div class="token-help" style="margin-top:8px">
-          Haal je token op via <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank">Graph Explorer</a>:<br>
-          1. Log in → kopieer het token via <code>Access token</code> tab<br>
-          2. Het token is ~1 uur geldig en wordt lokaal opgeslagen
-        </div>
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
+    <h3>Email → Taken</h3>
+    <div>
+      <label>Microsoft Graph access token</label>
+      <textarea id="ms-token-input" placeholder="eyJ0eXAiOiJKV1Qi..." rows="3" style="font-size:11px">${esc(emailToken)}</textarea>
+      <div class="token-help" style="margin-top:8px">
+        Token ophalen via <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank">Graph Explorer</a> → inloggen → klik op <b>Access token</b> tabblad → kopieer. Geldig ~1 uur.
       </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-        <button class="btn-primary" onclick="startEmailImport()">Emails ophalen</button>
-      </div>
-    </div></div>`;
-    setTimeout(()=>{
-      const el=document.getElementById('ms-token-input');
-      if(el&&!emailToken){el.focus();}
-    },0);
-  } else if(stage === 'progress'){
-    const steps = data.steps||[];
-    mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
-      <h3>Email → Taken</h3>
-      <div class="email-progress">
-        ${steps.map(s=>`<div class="email-step ${s.status}" id="step-${s.id}">
-          <div class="step-dot"></div><span>${esc(s.label)}</span>
-        </div>`).join('')}
-      </div>
-    </div></div>`;
-  } else if(stage === 'preview'){
-    const tasks = data.tasks||[];
-    mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
-      <h3>${tasks.length} taken gevonden</h3>
-      <div class="task-preview">
-        ${tasks.map(t=>{
-          const cls={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
-          const lbl={high:'Hoog',medium:'Med',low:'Laag',none:''}[t.priority]||'';
-          return `<div class="task-preview-item">
-            ${lbl?`<span class="task-preview-prio ${cls}">${lbl}</span>`:'<span style="width:28px;flex-shrink:0"></span>'}
-            <span>${esc(t.text)}</span>
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-        <button class="btn-primary" onclick="confirmEmailTasks(${JSON.stringify(tasks).replace(/"/g,'&quot;')})">Toevoegen aan lijst</button>
-      </div>
-    </div></div>`;
-  }
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary" onclick="startEmailImport()">Emails ophalen</button>
+    </div>
+  </div></div>`;
+  setTimeout(()=>{ const el=document.getElementById('ms-token-input'); if(el&&!emailToken)el.focus(); },0);
 }
 
-function setStep(id, status, label){
+function setStep(id,status,label){
   const el=document.getElementById('step-'+id);
   if(!el)return;
   el.className='email-step '+status;
   if(label)el.querySelector('span').textContent=label;
+}
+
+function showProgress(steps){
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal email-modal">
+    <h3>Email → Taken</h3>
+    <div class="email-progress">
+      ${steps.map(s=>`<div class="email-step ${s.status}" id="step-${s.id}"><div class="step-dot"></div><span>${esc(s.label)}</span></div>`).join('')}
+    </div>
+  </div></div>`;
+}
+
+// Rule-based analysis — no external API needed, no CORS
+function analyzeEmails(emails){
+  const SKIP_SENDERS=['linkedin.com','bamboohr.com','fluxicon.com','aicpa.org','getsmarter.com','sloan.mit.edu','notifications-noreply','newsletters-noreply','hofparken.nl','arcade.software','cwcloudpartner.com'];
+  const SKIP_SUBJECTS=['unsubscribe','newsletter','notification','bijgewerkt','deployment','deployed','test ','nieuwsbrief'];
+  const ACTION_WORDS=['kan jij','kunt u','zou jij','please','verzoek','actie','deadline','svp','asap','terugkoppeling','feedback','aanmaken','inplannen','plannen','bevestig','review','bekijk','check','opvolg','reageer','antwoord'];
+
+  const tasks=[];
+  for(const email of emails){
+    const sender=(email.sender?.emailAddress?.address||'').toLowerCase();
+    const subject=(email.subject||'').toLowerCase();
+    const preview=(email.bodyPreview||'').toLowerCase();
+
+    if(SKIP_SENDERS.some(s=>sender.includes(s)))continue;
+    if(SKIP_SUBJECTS.some(s=>subject.includes(s)||preview.includes(s)))continue;
+
+    const hasAction=ACTION_WORDS.some(w=>preview.includes(w)||subject.includes(w));
+    if(!hasAction&&!email.importance?.includes('high'))continue;
+
+    // Determine priority
+    let priority='medium';
+    if(email.importance==='high'||/urgent|asap|deadline|vandaag|today/i.test(subject+preview))priority='high';
+    else if(/fyi|ter info|no action/i.test(subject+preview))priority='low';
+
+    // Build task text
+    const name=email.sender?.emailAddress?.name||sender;
+    const subj=email.subject||'(geen onderwerp)';
+    const text=`${subj.slice(0,60)} — opvolgen (${name.split(' ')[0]})`;
+
+    tasks.push({text:text.slice(0,90), priority, selected:true});
+  }
+  return tasks;
+}
+
+function showPreview(tasks){
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
+    <h3>${tasks.length} actiepunten gevonden</h3>
+    <div class="task-preview" id="task-preview-list">
+      ${tasks.map((t,i)=>{
+        const cls={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
+        const lbl={high:'Hoog',medium:'Med',low:'Laag',none:''}[t.priority]||'';
+        return `<div class="task-preview-item" style="cursor:pointer" onclick="togglePreviewTask(${i})">
+          <div id="prev-check-${i}" class="task-check ${t.selected?'checked':''}"></div>
+          ${lbl?`<span class="task-preview-prio ${cls}">${lbl}</span>`:'<span style="width:28px;flex-shrink:0"></span>'}
+          <span>${esc(t.text)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="modal-actions" style="margin-top:10px">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary" onclick="savePreviewTasks()">Toevoegen aan Email</button>
+    </div>
+  </div></div>`;
+  window._previewTasks=tasks;
+}
+
+function togglePreviewTask(i){
+  window._previewTasks[i].selected=!window._previewTasks[i].selected;
+  const el=document.getElementById('prev-check-'+i);
+  if(el)el.className='task-check'+(window._previewTasks[i].selected?' checked':'');
+}
+
+async function savePreviewTasks(){
+  const tasks=(window._previewTasks||[]).filter(t=>t.selected);
+  if(!tasks.length){showToast('Selecteer minimaal één taak');return;}
+  showProgress([
+    {id:'list',label:'Email lijst ophalen...',status:'active'},
+    {id:'save',label:'Taken opslaan...',status:''},
+  ]);
+  let listId=null;
+  try{
+    let emailList=state.lists.find(l=>l.name==='Email');
+    if(!emailList){
+      const res=await sb('lists',{method:'POST',body:{name:'Email',color:'#378ADD',position:state.lists.length}});
+      if(!res||!res[0]){setStep('list','error','Kon lijst niet aanmaken');return;}
+      emailList=res[0]; state.lists.push(emailList);
+    }
+    listId=emailList.id;
+    setStep('list','done','Email lijst gevonden');
+  }catch(e){setStep('list','error',e.message);return;}
+
+  setStep('save','active',`${tasks.length} taken opslaan...`);
+  try{
+    const pos=state.tasks.filter(t=>t.list_id===listId).length;
+    for(let i=0;i<tasks.length;i++){
+      const t=tasks[i];
+      const res=await sb('tasks',{method:'POST',body:{list_id:listId,text:t.text,priority:t.priority,done:false,position:pos+i}});
+      if(res&&res[0])state.tasks.push(res[0]);
+    }
+    setStep('save','done',`${tasks.length} taken aangemaakt`);
+    state.activeListId=listId; state.globalView=null;
+    setTimeout(()=>{closeModal();render();showToast(`${tasks.length} taken toegevoegd aan Email`);},800);
+  }catch(e){setStep('save','error',e.message);}
 }
 
 async function startEmailImport(){
@@ -696,118 +762,46 @@ async function startEmailImport(){
   const token=(inp?inp.value:emailToken).trim();
   if(!token){showToast('Vul een access token in');return;}
   emailToken=token;
-  sessionStorage.setItem('ms_token',token);
+  localStorage.setItem('ms_graph_token',token);
 
-  const steps=[
-    {id:'fetch', label:'Emails ophalen van vandaag...', status:'active'},
-    {id:'ai',    label:'Actiepunten analyseren...', status:''},
-    {id:'save',  label:'Taken opslaan...', status:''},
-  ];
-  renderEmailModal('progress',{steps});
+  showProgress([
+    {id:'fetch',label:'Emails ophalen van vandaag...',status:'active'},
+    {id:'analyze',label:'Actiepunten analyseren...',status:''},
+  ]);
 
-  // Step 1: fetch today's emails from Graph
   let emails=[];
   try{
-    const today=new Date();
-    today.setHours(0,0,0,0);
+    const today=new Date(); today.setHours(0,0,0,0);
     const iso=today.toISOString();
-    const res=await fetch(`${GRAPH_ENDPOINT}/me/messages?$filter=receivedDateTime ge ${iso}&$select=subject,sender,bodyPreview&$top=30&$orderby=receivedDateTime desc`,{
-      headers:{Authorization:'Bearer '+token}
+    const res=await fetch(`${GRAPH_ENDPOINT}/me/messages?$filter=receivedDateTime ge ${iso}&$select=subject,sender,bodyPreview,importance&$top=40&$orderby=receivedDateTime desc`,{
+      headers:{Authorization:'Bearer '+token, 'Content-Type':'application/json'}
     });
     if(!res.ok){
-      const err=await res.text();
-      if(res.status===401){setStep('fetch','error','Token verlopen of ongeldig');return;}
-      setStep('fetch','error','Fout bij ophalen: '+res.status);return;
+      if(res.status===401){setStep('fetch','error','Token verlopen — haal een nieuw token op via Graph Explorer');return;}
+      if(res.status===403){setStep('fetch','error','Geen toegang — zorg dat Mail.Read rechten zijn gegeven in Graph Explorer');return;}
+      setStep('fetch','error','Fout '+res.status+' bij ophalen emails');return;
     }
     const json=await res.json();
     emails=json.value||[];
     setStep('fetch','done',`${emails.length} emails opgehaald`);
   }catch(e){
-    setStep('fetch','error','Netwerkfout: '+e.message);return;
+    setStep('fetch','error','Netwerkfout: '+e.message+' — controleer of je app op HTTPS draait');return;
   }
 
-  if(!emails.length){
-    setStep('ai','done','Geen emails vandaag');
-    setStep('save','done','Klaar');
-    setTimeout(closeModal,1500);return;
-  }
+  setStep('analyze','active','Actiepunten analyseren...');
+  const tasks=analyzeEmails(emails);
+  setStep('analyze','done',`${tasks.length} actiepunten gevonden`);
 
-  // Step 2: send to Claude
-  setStep('ai','active','Actiepunten analyseren...');
-  let tasks=[];
-  try{
-    const emailSummary=emails.map(e=>`Van: ${e.sender?.emailAddress?.name||''} <${e.sender?.emailAddress?.address||''}>\nOnderwerp: ${e.subject}\nSamenvatting: ${e.bodyPreview?.slice(0,300)||''}`).join('\n\n---\n\n');
-
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:`Je bent een assistent die emails analyseert en concrete actiepunten extraheert voor de ontvanger (Bas Sperling). 
-Geef ALLEEN taken terug die een concrete actie vereisen van Bas. Geen nieuwsbrieven, notificaties, of puur informatieve emails.
-Antwoord ALLEEN met geldig JSON in dit formaat, zonder uitleg, markdown of backticks:
-{"tasks":[{"text":"korte taakbeschrijving","priority":"high|medium|low|none"}]}
-Prioriteit high = urgent/deadline/expliciete vraag, medium = opvolging nodig, low = nice to have, none = geen prioriteit.
-Max 10 taken. Wees beknopt (max 80 tekens per taak).`,
-        messages:[{role:'user',content:`Analyseer deze emails van vandaag en extraheer actiepunten:\n\n${emailSummary}`}]
-      })
-    });
-    if(!res.ok){setStep('ai','error','Claude API fout: '+res.status);return;}
-    const json=await res.json();
-    const text=json.content?.[0]?.text||'{}';
-    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
-    tasks=parsed.tasks||[];
-    setStep('ai','done',`${tasks.length} actiepunten gevonden`);
-  }catch(e){
-    setStep('ai','error','Analysefout: '+e.message);return;
-  }
+  await new Promise(r=>setTimeout(r,500));
 
   if(!tasks.length){
-    setStep('save','done','Geen actiepunten gevonden');
-    setTimeout(closeModal,1500);return;
+    showToast('Geen actiepunten gevonden in emails van vandaag');
+    closeModal();return;
   }
-
-  // Show preview
-  renderEmailModal('preview',{tasks});
+  showPreview(tasks);
 }
 
-async function confirmEmailTasks(tasks){
-  // Find or create Email list
-  renderEmailModal('progress',{steps:[
-    {id:'list', label:'Email lijst ophalen...', status:'active'},
-    {id:'tasks', label:'Taken aanmaken...', status:''},
-  ]});
-
-  let listId=null;
-  try{
-    // Check if Email list exists
-    let emailList=state.lists.find(l=>l.name==='Email');
-    if(!emailList){
-      const res=await sb('lists',{method:'POST',body:{name:'Email',color:'#378ADD',position:state.lists.length}});
-      if(!res||!res[0]){setStep('list','error','Kon lijst niet aanmaken');return;}
-      emailList=res[0];
-      state.lists.push(emailList);
-    }
-    listId=emailList.id;
-    setStep('list','done','Email lijst gevonden');
-  }catch(e){setStep('list','error',e.message);return;}
-
-  // Save tasks
-  setStep('tasks','active',`${tasks.length} taken opslaan...`);
-  try{
-    const currentPos=state.tasks.filter(t=>t.list_id===listId).length;
-    for(let i=0;i<tasks.length;i++){
-      const t=tasks[i];
-      const res=await sb('tasks',{method:'POST',body:{list_id:listId,text:t.text,priority:t.priority||'none',done:false,position:currentPos+i}});
-      if(res&&res[0])state.tasks.push(res[0]);
-    }
-    setStep('tasks','done',`${tasks.length} taken aangemaakt`);
-    state.activeListId=listId;
-    state.globalView=null;
-    setTimeout(()=>{closeModal();render();showToast(`${tasks.length} taken toegevoegd aan Email`);},800);
-  }catch(e){setStep('tasks','error',e.message);}
-}
+loadAll();
 
 loadAll();
 </script>

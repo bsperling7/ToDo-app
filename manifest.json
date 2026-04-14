@@ -2,7 +2,7 @@
   "name": "Taken",
   "short_name": "Taken",
   "description": "Persoonlijke takenlijst",
-  "start_url": "/todo-app/",
+  "start_url": "/todo-app/index.html",
   "scope": "/todo-app/",
   "display": "standalone",
   "background_color": "#f7f8fc",

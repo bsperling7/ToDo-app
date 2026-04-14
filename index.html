@@ -137,6 +137,21 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .add-btn:hover{opacity:.82;}
 .add-btn:disabled{opacity:.4;cursor:default;}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--text-tertiary);font-size:13px;gap:8px;}
+.inline-add-trigger{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-tertiary);border:0.5px dashed transparent;margin-bottom:8px;transition:all .15s;}
+.inline-add-trigger:hover{color:var(--accent);border-color:var(--border-mid);background:var(--accent-soft);}
+.inline-add-trigger svg{flex-shrink:0;}
+.inline-add-form{background:var(--bg-secondary);border:0.5px solid var(--border-mid);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
+.inline-add-input{font-size:13px;padding:0;border:none;background:transparent;color:var(--text-primary);outline:none;font-family:var(--font);width:100%;}
+.inline-add-footer{display:flex;align-items:center;gap:6px;}
+.prio-pill{font-size:11px;padding:3px 9px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;}
+.prio-pill:hover{background:var(--bg-tertiary);}
+.prio-pill.selected-high{background:#FCEBEB;color:#A32D2D;border-color:#F09595;}
+.prio-pill.selected-medium{background:#FAEEDA;color:#854F0B;border-color:#EF9F27;}
+.prio-pill.selected-low{background:#EAF3DE;color:#3B6D11;border-color:#97C459;}
+.inline-add-actions{margin-left:auto;display:flex;gap:6px;}
+.btn-save{font-size:12px;padding:4px 12px;border-radius:var(--radius-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font);font-weight:500;}
+.btn-save:hover{opacity:.88;}
+.btn-discard{font-size:12px;padding:4px 10px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);}
 .spinner{width:22px;height:22px;border:2px solid var(--border-light);border-top-color:var(--text-tertiary);border-radius:50%;animation:spin .8s linear infinite;}
 .modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100;}
 .modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border-mid);padding:20px;width:320px;display:flex;flex-direction:column;gap:12px;}
@@ -248,7 +263,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.0.0</span>
+      <span class="version-label">v2.1.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -258,18 +273,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       <div class="filter-row" id="filter-row"></div>
     </div>
     <div id="task-area"></div>
-    <div id="add-task-area">
-      <div class="add-task-row">
-        <input class="new-task-input" id="new-task-text" placeholder="Nieuwe taak toevoegen..." onkeydown="if(event.key==='Enter')addTask()"/>
-        <select class="prio-select" id="new-task-prio">
-          <option value="none">Prioriteit</option>
-          <option value="high">Hoog</option>
-          <option value="medium">Medium</option>
-          <option value="low">Laag</option>
-        </select>
-        <button class="add-btn" id="add-btn" onclick="addTask()">Toevoegen</button>
-      </div>
-    </div>
     <div id="modal-container"></div>
   </div>
 </div>
@@ -288,7 +291,7 @@ const COLORS=[
 ];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{}};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},inlineAddOpen:false,inlineAddPrio:'none'};
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
@@ -506,28 +509,57 @@ function taskHTML(t,showList=false){
   const listLabel=list?`<span class="task-list-label"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block;flex-shrink:0"></span>${esc(list.name)}</span>`:'';
   return `<div class="task-row ${t.done?'done':''}"><div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div><div class="task-body"><div class="task-text">${esc(t.text)}</div><div class="task-meta">${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''} ${listLabel}</div></div><div class="task-actions"><button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button><button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button></div></div>`;
 }
+function inlineAddHTML(){
+  if(state.globalView||!state.activeListId)return '';
+  if(state.inlineAddOpen){
+    const prios=['none','high','medium','low'];
+    const cur=state.inlineAddPrio||'none';
+    const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
+    const pillLabel={none:'Geen prioriteit',high:'Hoog',medium:'Medium',low:'Laag'};
+    return `<div class="inline-add-form" id="inline-add-form">
+      <input class="inline-add-input" id="inline-task-text" placeholder="Taaknaam..." onkeydown="if(event.key==='Enter')submitInlineTask();if(event.key==='Escape')closeInlineAdd()" autofocus/>
+      <div class="inline-add-footer">
+        ${prios.map(p=>`<button class="prio-pill ${cur===p?pillClass[p]:''}" onclick="setInlinePrio('${p}')">${pillLabel[p]}</button>`).join('')}
+        <div class="inline-add-actions">
+          <button class="btn-discard" onclick="closeInlineAdd()">Annuleren</button>
+          <button class="btn-save" onclick="submitInlineTask()">Opslaan</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `<div class="inline-add-trigger" onclick="openInlineAdd()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+    Taak toevoegen
+  </div>`;
+}
+
 function renderTasks(){
   const area=document.getElementById('task-area');
   if(state.loading){area.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';return;}
   const isGlobal=!!state.globalView;
   if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
   const f=getFiltered();
-  if(!f.length){area.innerHTML='<div class="empty-state"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="4" width="24" height="24" rx="4"/><line x1="10" y1="12" x2="22" y2="12"/><line x1="10" y1="17" x2="18" y2="17"/><line x1="10" y1="22" x2="15" y2="22"/></svg><span>Geen taken gevonden</span></div>';return;}
+  let h=inlineAddHTML();
+  if(!f.length){
+    h+='<div class="empty-state" style="height:160px"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="4" width="24" height="24" rx="4"/><line x1="10" y1="12" x2="22" y2="12"/><line x1="10" y1="17" x2="18" y2="17"/><line x1="10" y1="22" x2="15" y2="22"/></svg><span>Geen taken gevonden</span></div>';
+    area.innerHTML=h;return;
+  }
   const open=f.filter(t=>!t.done).sort((a,b)=>PO[a.priority]-PO[b.priority]);
   const done=f.filter(t=>t.done);
-  let h='';
   if(open.length)h+=`<div class="section-header">Open <span style="font-weight:400">${open.length}</span></div>`+open.map(t=>taskHTML(t,isGlobal)).join('');
   if(done.length)h+=`<div class="section-header">Afgerond <span style="font-weight:400">${done.length}</span></div>`+done.map(t=>taskHTML(t,isGlobal)).join('');
   area.innerHTML=h;
-}
-function render(){
-  renderSidebar();renderTopbar();renderTasks();
-  document.getElementById('add-task-area').style.display=state.globalView?'none':'block';
+  if(state.inlineAddOpen){
+    const inp=document.getElementById('inline-task-text');
+    if(inp)inp.focus();
+  }
 }
 
-function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;render();}
-function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;render();}
-function setFilter(f){state.filter=f;render();}
+function render(){renderSidebar();renderTopbar();renderTasks();}
+
+function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;render();}
+function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;render();}
+function setFilter(f){state.filter=f;state.inlineAddOpen=false;render();}
 function setSearch(v){state.search=v;renderTasks();}
 function startEditName(){state.editingListName=true;renderTopbar();}
 function cancelEditName(){state.editingListName=false;renderTopbar();}
@@ -536,13 +568,26 @@ function saveListName(){
   const v=el.value.trim();state.editingListName=false;
   if(v)updateListName(state.activeListId,v);else render();
 }
+
+function openInlineAdd(){state.inlineAddOpen=true;state.inlineAddPrio='none';renderTasks();}
+function closeInlineAdd(){state.inlineAddOpen=false;state.inlineAddPrio='none';renderTasks();}
+function setInlinePrio(p){state.inlineAddPrio=p;renderTasks();}
+async function submitInlineTask(){
+  const inp=document.getElementById('inline-task-text');
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text){inp.focus();return;}
+  const prio=state.inlineAddPrio||'none';
+  state.inlineAddOpen=false;state.inlineAddPrio='none';
+  await createTask(text,prio);
+}
 async function addTask(){
-  const inp=document.getElementById('new-task-text');
-  const pr=document.getElementById('new-task-prio');
-  const text=inp.value.trim();if(!text||!state.activeListId){inp.focus();return;}
-  const btn=document.getElementById('add-btn');btn.disabled=true;
-  const prio=pr.value;inp.value='';pr.value='none';
-  await createTask(text,prio);btn.disabled=false;inp.focus();
+  const inp=document.getElementById('inline-task-text');
+  const text=(inp?inp.value:'').trim();
+  if(!text||!state.activeListId)return;
+  const prio=state.inlineAddPrio||'none';
+  state.inlineAddOpen=false;
+  await createTask(text,prio);
 }
 function confirmDeleteList(id,e){
   if(e)e.stopPropagation();
@@ -607,8 +652,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.0.0', date:'2026-04-14', latest:true,
-      notes:['Nieuw logo met favicon zichtbaar in browser tab','Frissere kleurthema: blauw-paars accent (#4F6EF7) en mint groen','Donker thema vernieuwd: diepere marineblauwe achtergronden','Actieve items, knoppen en checkmarks in accentkleur']
+      version:'2.1.0', date:'2026-04-14', latest:true,
+      notes:['Taak toevoegen inline bovenaan de lijst','Klik "+ Taak toevoegen" om een invoerveld uit te klappen','Prioriteit instellen via pills in het invoerveld','Enter om op te slaan, Escape om te annuleren','Vaste invoerbalk onderaan verwijderd']
+    },
+    {
+      version:'2.0.0', date:'2026-04-14',
+      notes:['Nieuw logo met favicon zichtbaar in browser tab','Frissere kleurthema: blauw-paars accent en mint groen','Donker thema vernieuwd met diepe marineblauw tinten']
     },
     {
       version:'1.9.0', date:'2026-04-01',

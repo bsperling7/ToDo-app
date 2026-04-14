@@ -95,6 +95,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .global-item .count{margin-left:auto;font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 6px;border-radius:10px;}
 .list-divider{font-size:10px;font-weight:600;color:var(--text-tertiary);letter-spacing:.07em;text-transform:uppercase;padding:10px 8px 4px;}
 .task-list-label{font-size:10px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;margin-top:2px;}
+.task-due{font-size:11px;display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:8px;background:var(--bg-tertiary);color:var(--text-tertiary);}
+.task-due.overdue{background:#FCEBEB;color:#A32D2D;}
+.task-due.today{background:#EAF3DE;color:#3B6D11;}
+.task-waiting{font-size:11px;display:inline-flex;align-items:center;gap:3px;color:var(--text-tertiary);}
+.task-notes{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:5px;padding:6px 8px;background:var(--bg-tertiary);border-radius:var(--radius-md);white-space:pre-wrap;display:none;}
+.task-row.expanded .task-notes{display:block;}
+.task-expand-btn{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:transform .15s;}
+.task-row.expanded .task-expand-btn{transform:rotate(90deg);}
+.task-expand-btn:hover{color:var(--text-secondary);background:var(--bg-tertiary);}
+.modal-wide{width:420px;}
+.modal-row-2{display:flex;gap:10px;}
+.modal-row-2>div{flex:1;}
 #topbar{padding:16px 20px 12px;border-bottom:0.5px solid var(--border-light);display:flex;flex-direction:column;gap:10px;}
 .list-header{display:flex;align-items:center;gap:10px;}
 .breadcrumb{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:3px;margin-bottom:3px;}
@@ -263,7 +275,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.1.0</span>
+      <span class="version-label">v2.2.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -291,7 +303,7 @@ const COLORS=[
 ];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},inlineAddOpen:false,inlineAddPrio:'none'};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none'};
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
@@ -358,9 +370,12 @@ async function updatePositions(lists){
     const l=state.lists.find(l=>l.id===lists[i].id);if(l)l.position=i;
   }
 }
-async function createTask(text,priority){
+async function createTask(text,priority,dueDate=null,waitingFor=null){
   const pos=state.tasks.filter(t=>t.list_id===state.activeListId).length;
-  const res=await sb('tasks',{method:'POST',body:{list_id:state.activeListId,text,priority,done:false,position:pos}});
+  const body={list_id:state.activeListId,text,priority,done:false,position:pos};
+  if(dueDate)body.due_date=dueDate;
+  if(waitingFor)body.waiting_for=waitingFor;
+  const res=await sb('tasks',{method:'POST',body});
   if(res&&res[0]){state.tasks.push(res[0]);render();}
 }
 async function toggleTask(id){
@@ -373,10 +388,17 @@ async function removeTask(id){
   await sb('tasks?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
   showToast('Taak verwijderd');
 }
-async function updateTask(id,text,priority){
+function toggleTaskExpand(id,e){
+  e.stopPropagation();
+  state.expandedTasks[id]=!state.expandedTasks[id];
+  const row=document.getElementById('tr-'+id);
+  if(row)row.classList.toggle('expanded',!!state.expandedTasks[id]);
+}
+async function updateTask(id,text,priority,dueDate,notes,waitingFor){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority},prefer:'return=minimal'});
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;
+  render();
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null},prefer:'return=minimal'});
 }
 
 // Drag & drop
@@ -503,11 +525,45 @@ function getFiltered(){
   if(state.search)t=t.filter(t=>t.text.toLowerCase().includes(state.search.toLowerCase()));
   return t;
 }
+function dueDateLabel(d){
+  if(!d)return '';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const due=new Date(d);
+  const diff=Math.round((due-today)/(1000*60*60*24));
+  let cls='task-due', label='';
+  if(diff<0){cls='task-due overdue';label=`Te laat (${Math.abs(diff)}d)`;}
+  else if(diff===0){cls='task-due today';label='Vandaag';}
+  else if(diff===1){label='Morgen';}
+  else if(diff<=7){label=`${diff}d`;}
+  else{label=due.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}
+  return `<span class="${cls}"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg>${label}</span>`;
+}
 function taskHTML(t,showList=false){
   const tc={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
   const list=showList?state.lists.find(l=>l.id===t.list_id):null;
   const listLabel=list?`<span class="task-list-label"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block;flex-shrink:0"></span>${esc(list.name)}</span>`:'';
-  return `<div class="task-row ${t.done?'done':''}"><div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div><div class="task-body"><div class="task-text">${esc(t.text)}</div><div class="task-meta">${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''} ${listLabel}</div></div><div class="task-actions"><button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button><button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button></div></div>`;
+  const due=dueDateLabel(t.due_date);
+  const waiting=t.waiting_for?`<span class="task-waiting"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>${esc(t.waiting_for)}</span>`:'';
+  const hasExtra=t.notes||t.due_date||t.waiting_for;
+  const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
+  const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
+  const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
+  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
+    ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
+    <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
+    <div class="task-body">
+      <div class="task-text">${esc(t.text)}</div>
+      <div class="task-meta" style="flex-wrap:wrap;gap:5px">
+        ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
+        ${due}${waiting}${listLabel}
+      </div>
+      ${notesEl}
+    </div>
+    <div class="task-actions">
+      <button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>
+      <button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+    </div>
+  </div>`;
 }
 function inlineAddHTML(){
   if(state.globalView||!state.activeListId)return '';
@@ -515,9 +571,13 @@ function inlineAddHTML(){
     const prios=['none','high','medium','low'];
     const cur=state.inlineAddPrio||'none';
     const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
-    const pillLabel={none:'Geen prioriteit',high:'Hoog',medium:'Medium',low:'Laag'};
+    const pillLabel={none:'Geen prio',high:'Hoog',medium:'Medium',low:'Laag'};
     return `<div class="inline-add-form" id="inline-add-form">
-      <input class="inline-add-input" id="inline-task-text" placeholder="Taaknaam..." onkeydown="if(event.key==='Enter')submitInlineTask();if(event.key==='Escape')closeInlineAdd()" autofocus/>
+      <input class="inline-add-input" id="inline-task-text" placeholder="Taaknaam..." onkeydown="if(event.key==='Enter')submitInlineTask();if(event.key==='Escape')closeInlineAdd()"/>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="date" id="inline-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="Deadline"/>
+        <input id="inline-task-waiting" placeholder="Wacht op..." style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;" title="Wacht op persoon"/>
+      </div>
       <div class="inline-add-footer">
         ${prios.map(p=>`<button class="prio-pill ${cur===p?pillClass[p]:''}" onclick="setInlinePrio('${p}')">${pillLabel[p]}</button>`).join('')}
         <div class="inline-add-actions">
@@ -578,8 +638,10 @@ async function submitInlineTask(){
   const text=inp.value.trim();
   if(!text){inp.focus();return;}
   const prio=state.inlineAddPrio||'none';
+  const due=document.getElementById('inline-task-due')?.value||null;
+  const waiting=document.getElementById('inline-task-waiting')?.value.trim()||null;
   state.inlineAddOpen=false;state.inlineAddPrio='none';
-  await createTask(text,prio);
+  await createTask(text,prio,due,waiting);
 }
 async function addTask(){
   const inp=document.getElementById('inline-task-text');
@@ -638,12 +700,35 @@ async function submitNewList(parentId){
 }
 function editTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>Taak bewerken</h3><div><label>Omschrijving</label><textarea id="modal-task-text">${esc(t.text)}</textarea></div><div><label>Prioriteit</label><select id="modal-task-prio"><option value="none" ${t.priority==='none'?'selected':''}>Geen</option><option value="high" ${t.priority==='high'?'selected':''}>Hoog</option><option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option><option value="low" ${t.priority==='low'?'selected':''}>Laag</option></select></div><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary" onclick="submitEditTask('${id}')">Opslaan</button></div></div></div>`;
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal modal-wide">
+    <h3>Taak bewerken</h3>
+    <div><label>Omschrijving</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
+    <div class="modal-row-2">
+      <div><label>Prioriteit</label><select id="modal-task-prio">
+        <option value="none" ${t.priority==='none'?'selected':''}>Geen</option>
+        <option value="high" ${t.priority==='high'?'selected':''}>Hoog</option>
+        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
+        <option value="low" ${t.priority==='low'?'selected':''}>Laag</option>
+      </select></div>
+      <div><label>Deadline</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
+    </div>
+    <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
+    <div><label>Notities</label><textarea id="modal-task-notes" rows="3" placeholder="Extra context, links, aantekeningen...">${esc(t.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary" onclick="submitEditTask('${id}')">Opslaan</button>
+    </div>
+  </div></div>`;
 }
 async function submitEditTask(id){
   const text=document.getElementById('modal-task-text').value.trim();
   const prio=document.getElementById('modal-task-prio').value;
-  if(!text)return;closeModal();await updateTask(id,text,prio);
+  const due=document.getElementById('modal-task-due').value;
+  const notes=document.getElementById('modal-task-notes').value.trim();
+  const waiting=document.getElementById('modal-task-waiting').value.trim();
+  if(!text)return;
+  closeModal();
+  await updateTask(id,text,prio,due,notes,waiting);
 }
 function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary btn-danger" onclick="confirmAction()">Verwijderen</button></div></div></div>`;
@@ -652,8 +737,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.1.0', date:'2026-04-14', latest:true,
-      notes:['Taak toevoegen inline bovenaan de lijst','Klik "+ Taak toevoegen" om een invoerveld uit te klappen','Prioriteit instellen via pills in het invoerveld','Enter om op te slaan, Escape om te annuleren','Vaste invoerbalk onderaan verwijderd']
+      version:'2.2.0', date:'2026-04-14', latest:true,
+      notes:['Deadline per taak — rood als verlopen, groen als vandaag','Notities per taak — uitklapbaar via pijltje','Wacht op — koppel een taak aan een persoon of team','Deadline en wacht op ook direct invulbaar bij aanmaken','Bewerk-modal uitgebreid met alle nieuwe velden']
+    },
+    {
+      version:'2.1.0', date:'2026-04-14',
+      notes:['Taak toevoegen inline bovenaan de lijst','Prioriteit instellen via pills, Enter om op te slaan']
     },
     {
       version:'2.0.0', date:'2026-04-14',

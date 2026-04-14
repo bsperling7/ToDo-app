@@ -47,7 +47,24 @@
 }
 html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);color:var(--text-primary);}
 #app{display:flex;height:100vh;max-width:1000px;margin:0 auto;}
-#sidebar{width:230px;min-width:230px;background:var(--bg-secondary);border-right:0.5px solid var(--border-light);display:flex;flex-direction:column;overflow:hidden;}
+#sidebar{width:230px;min-width:230px;background:var(--bg-secondary);border-right:0.5px solid var(--border-light);display:flex;flex-direction:column;overflow:hidden;transition:transform .25s;}
+#wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg-primary);position:relative;}
+.hamburger{display:none;width:36px;height:36px;border:none;background:none;cursor:pointer;color:var(--text-secondary);border-radius:var(--radius-md);align-items:center;justify-content:center;flex-shrink:0;}
+.hamburger:hover{background:var(--bg-secondary);}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:49;}
+@media(max-width:640px){
+  #app{position:relative;overflow:hidden;}
+  #sidebar{position:fixed;top:0;left:0;height:100%;z-index:50;transform:translateX(-100%);width:80%;max-width:280px;}
+  #sidebar.open{transform:translateX(0);}
+  .sidebar-overlay.open{display:block;}
+  .hamburger{display:flex;}
+  #task-area{padding:10px 14px;}
+  #topbar{padding:12px 14px 10px;}
+  .search-input{width:120px;}
+  .modal{width:calc(100vw - 32px) !important;max-width:420px;}
+  .modal-row-2{flex-direction:column;gap:8px;}
+  .inline-add-form{padding:8px 10px;}
+}
 .sidebar-top{padding:14px 12px 8px;border-bottom:0.5px solid var(--border-light);}
 .app-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
 .app-title{font-size:13px;font-weight:600;color:var(--text-tertiary);letter-spacing:.08em;text-transform:uppercase;}
@@ -214,6 +231,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 </head>
 <body>
 <div id="app">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div id="sidebar">
     <div class="sidebar-top">
       <div class="app-title-row">
@@ -275,13 +293,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.2.0</span>
+      <span class="version-label">v2.3.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
   <div id="wrapper">
     <div id="topbar">
-      <div class="list-header" id="list-header"></div>
+      <div class="list-header" id="list-header">
+        <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg>
+        </button>
+      </div>
       <div class="filter-row" id="filter-row"></div>
     </div>
     <div id="task-area"></div>
@@ -488,23 +510,32 @@ function getBreadcrumb(id){
   while(cur){c.unshift(cur);cur=cur.parent_id?state.lists.find(l=>l.id===cur.parent_id):null;}
   return c;
 }
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
 function renderTopbar(){
+  const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
     const labels={'all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond'};
-    document.getElementById('list-header').innerHTML=`<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
+    document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
     return;
   }
   const list=state.lists.find(l=>l.id===state.activeListId);
-  if(!list){document.getElementById('list-header').innerHTML='';document.getElementById('filter-row').innerHTML='';return;}
+  if(!list){document.getElementById('list-header').innerHTML=hamburger;document.getElementById('filter-row').innerHTML='';return;}
   const crumbs=getBreadcrumb(list.id);
   const bc=crumbs.length>1?`<div class="breadcrumb">${crumbs.slice(0,-1).map(c=>`<span class="breadcrumb-link" onclick="selectList('${c.id}')">${esc(c.name)}</span>`).join('<span style="opacity:.4"> / </span>')}<span style="opacity:.4"> / </span></div>`:'';
   const header=document.getElementById('list-header');
   if(state.editingListName){
-    header.innerHTML=`<div style="display:flex;flex-direction:column;gap:2px;flex:1">${bc}<input class="list-name-input" id="name-editor" value="${esc(list.name)}" onblur="saveListName()" onkeydown="if(event.key==='Enter')saveListName();if(event.key==='Escape')cancelEditName()"/></div>`;
+    header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1">${bc}<input class="list-name-input" id="name-editor" value="${esc(list.name)}" onblur="saveListName()" onkeydown="if(event.key==='Enter')saveListName();if(event.key==='Escape')cancelEditName()"/></div>`;
     setTimeout(()=>{const el=document.getElementById('name-editor');if(el){el.focus();el.select();}},0);
   }else{
-    header.innerHTML=`<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
+    header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
   }
   const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio']];
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
@@ -617,8 +648,8 @@ function renderTasks(){
 
 function render(){renderSidebar();renderTopbar();renderTasks();}
 
-function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;render();}
-function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;render();}
+function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;closeSidebar();render();}
+function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;closeSidebar();render();}
 function setFilter(f){state.filter=f;state.inlineAddOpen=false;render();}
 function setSearch(v){state.search=v;renderTasks();}
 function startEditName(){state.editingListName=true;renderTopbar();}
@@ -737,8 +768,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.2.0', date:'2026-04-14', latest:true,
-      notes:['Deadline per taak — rood als verlopen, groen als vandaag','Notities per taak — uitklapbaar via pijltje','Wacht op — koppel een taak aan een persoon of team','Deadline en wacht op ook direct invulbaar bij aanmaken','Bewerk-modal uitgebreid met alle nieuwe velden']
+      version:'2.3.0', date:'2026-04-14', latest:true,
+      notes:['Mobiele weergave — werkt nu op telefoon en tablet','Sidebar schuift in via hamburger-knop linksboven','Sidebar sluit automatisch bij lijstselectie','Desktop layout ongewijzigd']
+    },
+    {
+      version:'2.2.0', date:'2026-04-14',
+      notes:['Deadline per taak met kleurcodering','Notities per taak — uitklapbaar','Wacht op — koppel een taak aan een persoon']
     },
     {
       version:'2.1.0', date:'2026-04-14',

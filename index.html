@@ -286,6 +286,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         Afgerond
         <span class="count" id="global-done-count"></span>
       </button>
+      <button class="global-item" id="global-waiting-btn" onclick="setGlobalView('waiting')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="5" r="2"/><path d="M3 12c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+        Wacht op
+        <span class="count" id="global-waiting-count"></span>
+      </button>
     </div>
     <div class="sidebar-bottom">
       <button class="add-list-btn" onclick="openNewListModal(null)">
@@ -298,7 +303,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.3.0</span>
+      <span class="version-label">v2.4.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -500,11 +505,13 @@ function renderSidebar(){
   const high=state.tasks.filter(t=>t.priority==='high'&&!t.done).length;
   const open=state.tasks.filter(t=>!t.done).length;
   const done=state.tasks.filter(t=>t.done).length;
+  const waiting=state.tasks.filter(t=>t.waiting_for&&!t.done).length;
   document.getElementById('global-all-count').textContent=all||'';
   document.getElementById('global-high-count').textContent=high||'';
   document.getElementById('global-open-count').textContent=open||'';
   document.getElementById('global-done-count').textContent=done||'';
-  ['all','high','open','done'].forEach(v=>{
+  document.getElementById('global-waiting-count').textContent=waiting||'';
+  ['all','high','open','done','waiting'].forEach(v=>{
     document.getElementById('global-'+v+'-btn').classList.toggle('active',state.globalView===v);
   });
 }
@@ -526,7 +533,7 @@ function closeSidebar(){
 function renderTopbar(){
   const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
-    const labels={'all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond'};
+    const labels={'all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond','waiting':'Wacht op'};
     document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
     return;
@@ -542,7 +549,7 @@ function renderTopbar(){
   }else{
     header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
   }
-  const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio']];
+  const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio'],['waiting','Wacht op']];
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
 }
 function getFiltered(){
@@ -552,11 +559,13 @@ function getFiltered(){
     if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
     else if(state.globalView==='open')t=t.filter(t=>!t.done);
     else if(state.globalView==='done')t=t.filter(t=>t.done);
+    else if(state.globalView==='waiting')t=t.filter(t=>t.waiting_for&&!t.done);
   }else{
     t=state.tasks.filter(t=>t.list_id===state.activeListId);
     if(state.filter==='open')t=t.filter(t=>!t.done);
     if(state.filter==='done')t=t.filter(t=>t.done);
     if(state.filter==='high')t=t.filter(t=>t.priority==='high');
+    if(state.filter==='waiting')t=t.filter(t=>t.waiting_for&&!t.done);
   }
   if(state.search)t=t.filter(t=>t.text.toLowerCase().includes(state.search.toLowerCase()));
   return t;
@@ -773,8 +782,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.3.0', date:'2026-04-14', latest:true,
-      notes:['Mobiele weergave — werkt nu op telefoon en tablet','Sidebar schuift in via hamburger-knop linksboven','Sidebar sluit automatisch bij lijstselectie','Desktop layout ongewijzigd']
+      version:'2.4.0', date:'2026-04-15', latest:true,
+      notes:['Filter op "Wacht op" per lijst via filterrij','Globale "Wacht op" weergave in de sidebar met teller','Toont alle openstaande taken die wachten op iemand anders']
+    },
+    {
+      version:'2.3.0', date:'2026-04-14',
+      notes:['Mobiele weergave — sidebar schuift in via hamburger','PWA installeerbaar als app op telefoon']
     },
     {
       version:'2.2.0', date:'2026-04-14',

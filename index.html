@@ -813,11 +813,12 @@ function renderTasks(){
   if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
 
   // Bewaar invoerveld waarden als form al open is
-  let savedText='', savedDue='', savedWaiting='';
+  let savedText='', savedDue='', savedWaiting='', savedImpact='none';
   if(state.inlineAddOpen){
     savedText=document.getElementById('inline-task-text')?.value||'';
     savedDue=document.getElementById('inline-task-due')?.value||'';
     savedWaiting=document.getElementById('inline-task-waiting')?.value||'';
+    savedImpact=document.getElementById('inline-task-impact')?.value||'none';
   }
   let personPills='';
   if(state.globalView==='waiting'){
@@ -858,6 +859,8 @@ function renderTasks(){
     }
     if(due&&savedDue)due.value=savedDue;
     if(waiting&&savedWaiting)waiting.value=savedWaiting;
+    const impSel=document.getElementById('inline-task-impact');
+    if(impSel&&savedImpact)impSel.value=savedImpact;
   }
 }
 

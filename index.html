@@ -134,12 +134,13 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .waiting-pill.active .pill-count{background:var(--accent);color:#fff;}
 .recurrence-badge{font-size:10px;display:inline-flex;align-items:center;gap:3px;color:var(--text-tertiary);}
 .task-today-toggle{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:color .15s;}
-.impact-badge{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;}
-.impact-blocker{background:#2d0000;color:#ff5555;}
-.impact-high{background:#FAEEDA;color:#854F0B;}
-.impact-medium{background:#eef1fe;color:#4F6EF7;}
-.impact-low{background:var(--bg-tertiary);color:var(--text-tertiary);}
-[data-theme="dark"] .impact-blocker{background:#3d0505;color:#ff7777;}
+.ibp-badge{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;}
+.ibp-impact{background:#fff3cd;color:#856404;}
+.ibp-blocker{background:#2d0000;color:#ff5555;}
+.ibp-priority{background:#e8f0fe;color:#1a56db;}
+[data-theme="dark"] .ibp-blocker{background:#3d0505;color:#ff7777;}
+[data-theme="dark"] .ibp-impact{background:#3a2e00;color:#ffd760;}
+[data-theme="dark"] .ibp-priority{background:#1a2040;color:#6B8BFF;}
 .task-today-toggle:hover{color:#F59E0B;}
 .task-today-toggle.is-today{color:#F59E0B;}
 .cmd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;}
@@ -361,7 +362,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v4.1.0</span>
+      <span class="version-label">v4.2.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -488,12 +489,12 @@ async function updatePositions(lists){
     const l=state.lists.find(l=>l.id===lists[i].id);if(l)l.position=i;
   }
 }
-async function createTask(text,priority,dueDate=null,waitingFor=null,impact=null,jiraKey=null){
+async function createTask(text,priority,dueDate=null,waitingFor=null,ibp=null,jiraKey=null){
   const pos=state.tasks.filter(t=>t.list_id===state.activeListId).length;
   const body={list_id:state.activeListId,text,priority,done:false,position:pos};
   if(dueDate)body.due_date=dueDate;
   if(waitingFor)body.waiting_for=waitingFor;
-  if(impact&&impact!=='none')body.impact=impact;
+  if(ibp&&ibp!=='none')body.ibp=ibp;
   if(jiraKey)body.jira_key=jiraKey;
   const res=await sb('tasks',{method:'POST',body});
   if(res&&res[0]){state.tasks.push(res[0]);render();}
@@ -511,11 +512,11 @@ function toggleTaskExpand(id,e){
   const row=document.getElementById('tr-'+id);
   if(row)row.classList.toggle('expanded',!!state.expandedTasks[id]);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,impact){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.impact=impact||null;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,impact:impact||null},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null},prefer:'return=minimal'});
 }
 
 // ── Ctrl+K zoeken ────────────────────────────────────────
@@ -744,9 +745,10 @@ function taskHTML(t,showList=false){
   const waiting=t.waiting_for?`<span class="task-waiting"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>${esc(t.waiting_for)}</span>`:'';
   const recLabels={daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks'};
   const recBadge=t.recurrence&&recLabels[t.recurrence]?`<span class="recurrence-badge"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6a4 4 0 0 1 4-4 4 4 0 0 1 3 1.3"/><polyline points="9,1 9,4 6,4"/><path d="M10 6a4 4 0 0 1-4 4 4 4 0 0 1-3-1.3"/><polyline points="3,11 3,8 6,8"/></svg>${recLabels[t.recurrence]}</span>`:'';
-  const impactLabels={blocker:'🔴 Blocker',high:'Impact: Hoog',medium:'Impact: Med',low:'Impact: Laag'};
-  const impactCls={blocker:'impact-blocker',high:'impact-high',medium:'impact-medium',low:'impact-low'};
-  const impactBadge=t.impact&&t.impact!=='none'&&impactLabels[t.impact]?`<span class="impact-badge ${impactCls[t.impact]||''}">${impactLabels[t.impact]}</span>`:'';
+
+  const ibpLabels={impact:'⚡ Impact',blocker:'🔴 Blocker',priority:'🔺 Priority'};
+  const ibpCls={impact:'ibp-impact',blocker:'ibp-blocker',priority:'ibp-priority'};
+  const ibpBadge=t.ibp&&t.ibp!=='none'&&ibpLabels[t.ibp]?`<span class="ibp-badge ${ibpCls[t.ibp]||''}">${ibpLabels[t.ibp]}</span>`:'';
   const jiraBadge=t.jira_key?`<span class="jira-badge"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="10" rx="2"/><path d="M3.5 6l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(t.jira_key)}</span>`:''
   const hasExtra=t.notes||t.due_date||t.waiting_for;
   const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
@@ -760,7 +762,7 @@ function taskHTML(t,showList=false){
       <div class="task-text">${esc(t.text)}</div>
       <div class="task-meta" style="flex-wrap:wrap;gap:5px">
         ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
-        ${due}${waiting}${recBadge}${impactBadge}${jiraBadge}${listLabel}
+        ${due}${waiting}${recBadge}${ibpBadge}${jiraBadge}${listLabel}
       </div>
       ${notesEl}
     </div>
@@ -783,12 +785,11 @@ function inlineAddHTML(){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input type="date" id="inline-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="Deadline"/>
         <input id="inline-task-waiting" placeholder="Wacht op..." style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;" title="Wacht op persoon"/>
-        <select id="inline-task-impact" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="Impact">
-          <option value="none">Impact...</option>
+        <select id="inline-task-ibp" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="IBP">
+          <option value="none">IBP...</option>
+          <option value="impact">⚡ Impact</option>
           <option value="blocker">🔴 Blocker</option>
-          <option value="high">Impact: Hoog</option>
-          <option value="medium">Impact: Medium</option>
-          <option value="low">Impact: Laag</option>
+          <option value="priority">🔺 Priority</option>
         </select>
       </div>
       <div class="inline-add-footer">
@@ -813,12 +814,12 @@ function renderTasks(){
   if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
 
   // Bewaar invoerveld waarden als form al open is
-  let savedText='', savedDue='', savedWaiting='', savedImpact='none';
+  let savedText='', savedDue='', savedWaiting='', savedIbp='none';
   if(state.inlineAddOpen){
     savedText=document.getElementById('inline-task-text')?.value||'';
     savedDue=document.getElementById('inline-task-due')?.value||'';
     savedWaiting=document.getElementById('inline-task-waiting')?.value||'';
-    savedImpact=document.getElementById('inline-task-impact')?.value||'none';
+    savedIbp=document.getElementById('inline-task-ibp')?.value||'none';
   }
   let personPills='';
   if(state.globalView==='waiting'){
@@ -859,8 +860,8 @@ function renderTasks(){
     }
     if(due&&savedDue)due.value=savedDue;
     if(waiting&&savedWaiting)waiting.value=savedWaiting;
-    const impSel=document.getElementById('inline-task-impact');
-    if(impSel&&savedImpact)impSel.value=savedImpact;
+    const ibpSel=document.getElementById('inline-task-ibp');
+    if(ibpSel&&savedIbp)ibpSel.value=savedIbp;
   }
 }
 
@@ -900,9 +901,9 @@ async function submitInlineTask(){
   const prio=state.inlineAddPrio||'none';
   const due=document.getElementById('inline-task-due')?.value||null;
   const waiting=document.getElementById('inline-task-waiting')?.value.trim()||null;
-  const impact=document.getElementById('inline-task-impact')?.value||null;
+  const ibp=document.getElementById('inline-task-ibp')?.value||null;
   state.inlineAddOpen=false;state.inlineAddPrio='none';
-  await createTask(text,prio,due,waiting,impact);
+  await createTask(text,prio,due,waiting,ibp);
 }
 async function addTask(){
   const inp=document.getElementById('inline-task-text');
@@ -965,16 +966,21 @@ function editTask(id){
     <h3>Taak bewerken</h3>
     <div><label>Omschrijving</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
     <div class="modal-row-2">
-      <div><label>Prioriteit</label><select id="modal-task-prio">
-        <option value="none" ${t.priority==='none'?'selected':''}>Geen</option>
+      <div><label>Prioriteit</label><select id="modal-task-prio2">
+        <option value="none" ${t.priority==='none'||!t.priority?'selected':''}>Geen</option>
         <option value="high" ${t.priority==='high'?'selected':''}>Hoog</option>
         <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
         <option value="low" ${t.priority==='low'?'selected':''}>Laag</option>
       </select></div>
-      <div><label>Deadline</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
+      <div><label>IBP</label><select id="modal-task-ibp">
+        <option value="none" ${!t.ibp||t.ibp==='none'?'selected':''}>Geen</option>
+        <option value="impact" ${t.ibp==='impact'?'selected':''}>⚡ Impact</option>
+        <option value="blocker" ${t.ibp==='blocker'?'selected':''}>🔴 Blocker</option>
+        <option value="priority" ${t.ibp==='priority'?'selected':''}>🔺 Priority</option>
+      </select></div>
     </div>
     <div class="modal-row-2">
-      <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
+      <div><label>Deadline</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
       <div><label>Herhaling</label><select id="modal-task-recurrence">
         <option value="" ${!t.recurrence?'selected':''}>Geen</option>
         <option value="daily" ${t.recurrence==='daily'?'selected':''}>Dagelijks</option>
@@ -983,14 +989,8 @@ function editTask(id){
         <option value="yearly" ${t.recurrence==='yearly'?'selected':''}>Jaarlijks</option>
       </select></div>
     </div>
+    <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
     <div><label>Notities</label><textarea id="modal-task-notes" rows="3" placeholder="Extra context, links, aantekeningen...">${esc(t.notes||'')}</textarea></div>
-    <div><label>Impact</label><select id="modal-task-impact">
-        <option value="none" ${!t.impact||t.impact==='none'?'selected':''}>Geen</option>
-        <option value="blocker" ${t.impact==='blocker'?'selected':''}>🔴 Blocker</option>
-        <option value="high" ${t.impact==='high'?'selected':''}>Impact: Hoog</option>
-        <option value="medium" ${t.impact==='medium'?'selected':''}>Impact: Medium</option>
-        <option value="low" ${t.impact==='low'?'selected':''}>Impact: Laag</option>
-      </select></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
       <button class="btn-primary" onclick="submitEditTask('${id}')">Opslaan</button>
@@ -999,21 +999,21 @@ function editTask(id){
 }
 async function submitEditTask(id){
   const text=document.getElementById('modal-task-text').value.trim();
-  const prio=document.getElementById('modal-task-prio').value;
+  const prio=document.getElementById('modal-task-prio2')?.value||document.getElementById('modal-task-prio')?.value||'none';
   const due=document.getElementById('modal-task-due').value;
   const notes=document.getElementById('modal-task-notes').value.trim();
   const waiting=document.getElementById('modal-task-waiting').value.trim();
   const recurrence=document.getElementById('modal-task-recurrence').value;
-  const impact=document.getElementById('modal-task-impact')?.value||'none';
+  const ibp=document.getElementById('modal-task-ibp')?.value||'none';
   if(!text)return;
   closeModal();
-  await updateTask(id,text,prio,due,notes,waiting,recurrence,impact);
+  await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,impact){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.impact=impact||null;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,impact:impact||null},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null},prefer:'return=minimal'});
 }
 function nextDueDate(current,recurrence){
   if(!current||!recurrence)return null;
@@ -1312,21 +1312,21 @@ function exportToExcel() {
     ['Afgerond', tasks.filter(t => t.done).length],
     ['Open', tasks.filter(t => !t.done).length],
     ['Hoge prioriteit', tasks.filter(t => t.priority === 'high' && !t.done).length],
-    ['Blockers', tasks.filter(t => t.impact === 'blocker' && !t.done).length],
+    ['Blockers', tasks.filter(t => t.ibp === 'blocker' && !t.done).length],
   ];
   const ss = XLSX.utils.aoa_to_sheet(summaryData);
   ss['!cols'] = [{wch:25},{wch:30}];
   XLSX.utils.book_append_sheet(wb, ss, 'Samenvatting');
 
-  const impactL = {blocker:'Blocker',high:'Hoog',medium:'Medium',low:'Laag',none:''};
-  const headers = ['Taak','Lijst','Prioriteit','Impact','Status','Deadline','Wacht op','Jira','Notities'];
+  const impactL = {impact:'Impact',blocker:'Blocker',priority:'Priority',none:''};
+  const headers = ['Taak','Lijst','Prioriteit','IBP','Status','Deadline','Wacht op','Jira','Notities'];
   const rows = tasks.map(t => {
     const list = state.lists.find(l => l.id === t.list_id);
     return [
       t.text,
       list ? list.name : '',
       {high:'Hoog',medium:'Medium',low:'Laag',none:''}[t.priority]||'',
-      impactL[t.impact]||'',
+      impactL[t.ibp]||'',
       t.done ? 'Afgerond' : 'Open',
       t.due_date || '',
       t.waiting_for || '',
@@ -1347,11 +1347,11 @@ function exportToExcel() {
       t.done ? '✓' : '○',
       t.text,
       {high:'Hoog',medium:'Medium',low:'Laag',none:''}[t.priority]||'',
-      impactL[t.impact]||'',
+      impactL[t.ibp]||'',
       t.due_date||'',
       t.notes||'',
     ]);
-    const ls = XLSX.utils.aoa_to_sheet([['Status','Taak','Prioriteit','Impact','Deadline','Notities'],...lr]);
+    const ls = XLSX.utils.aoa_to_sheet([['Status','Taak','Prioriteit','IBP','Deadline','Notities'],...lr]);
     ls['!cols'] = [{wch:6},{wch:40},{wch:10},{wch:10},{wch:12},{wch:30}];
     XLSX.utils.book_append_sheet(wb, ls, list.name.slice(0,31));
   }
@@ -1366,13 +1366,13 @@ function exportToPDF() {
   const tasks = getTasksForWeek(exportWeekOffset);
   const openTasks = tasks.filter(t => !t.done).sort((a,b) => PO[a.priority]-PO[b.priority]);
   const doneTasks = tasks.filter(t => t.done);
-  const impactL = {blocker:'🔴 Blocker',high:'Impact: Hoog',medium:'Impact: Med',low:'Impact: Laag'};
+  const impactL = {impact:'⚡ Impact',blocker:'🔴 Blocker',priority:'🔺 Priority'};
 
   const taskRow = (t) => {
     const list = state.lists.find(l => l.id === t.list_id);
     const prioLabel = {high:'Hoog',medium:'Med',low:'Laag',none:''}[t.priority]||'';
     const prioStyle = {high:'color:#854F0B;background:#FAEEDA',medium:'color:#4F6EF7;background:#eef1fe',low:'color:#3B6D11;background:#EAF3DE',none:''}[t.priority]||'';
-    const imp = t.impact&&t.impact!=='none'&&impactL[t.impact]?`<span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#2d0000;color:#ff5555;font-weight:500">${impactL[t.impact]}</span>`:'';
+    const imp = t.ibp&&t.ibp!=='none'&&impactL[t.ibp]?`<span style="font-size:10px;padding:1px 5px;border-radius:6px;background:#2d0000;color:#ff5555;font-weight:500">${impactL[t.impact]}</span>`:'';
     return `<tr style="border-bottom:1px solid #eee">
       <td style="padding:6px 8px;font-size:12px;${t.done?'text-decoration:line-through;color:#999':''}">${t.text.replace(/</g,'&lt;')}</td>
       <td style="padding:6px 8px;font-size:11px;color:#666">${list?list.name.replace(/</g,'&lt;'):''}</td>
@@ -1391,7 +1391,7 @@ function exportToPDF() {
     <div class="stat"><div class="stat-n">${tasks.length}</div><div class="stat-l">Totaal taken</div></div>
     <div class="stat green"><div class="stat-n">${doneTasks.length}</div><div class="stat-l">Afgerond</div></div>
     <div class="stat orange"><div class="stat-n">${openTasks.length}</div><div class="stat-l">Open</div></div>
-    <div class="stat red"><div class="stat-n">${tasks.filter(t=>t.impact==='blocker'&&!t.done).length}</div><div class="stat-l">Blockers</div></div>
+    <div class="stat red"><div class="stat-n">${tasks.filter(t=>t.ibp==='blocker'&&!t.done).length}</div><div class="stat-l">Blockers</div></div>
   </div>
   ${openTasks.length?`<h2>Open (${openTasks.length})</h2><table><thead><tr><th>Taak</th><th>Lijst</th><th>Prioriteit / Impact</th><th>Deadline</th><th>Jira</th></tr></thead><tbody>${openTasks.map(taskRow).join('')}</tbody></table>`:''}
   ${doneTasks.length?`<h2>Afgerond (${doneTasks.length})</h2><table><thead><tr><th>Taak</th><th>Lijst</th><th>Prioriteit / Impact</th><th>Deadline</th><th>Jira</th></tr></thead><tbody>${doneTasks.map(taskRow).join('')}</tbody></table>`:''}

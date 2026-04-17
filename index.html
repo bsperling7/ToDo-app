@@ -1040,220 +1040,70 @@ function openEmailImport(){
   </div></div>`;
 }
 
-// ── Jira → Taken ──────────────────────────────────────
-let jiraState = {
-  domain: localStorage.getItem('jira_domain') || '',
-  email: localStorage.getItem('jira_email') || '',
-  token: localStorage.getItem('jira_token') || '',
-  project: null,
-  issues: [],
-  projects: [],
-  selectedIssues: new Set(),
-};
-
+// ── Jira → Taken (via Claude + Atlassian MCP) ─────────
 function openJiraModal() {
-  // Als we nog geen config hebben, toon configuratiescherm
-  if (!jiraState.domain || !jiraState.token) {
-    showJiraConfig();
-  } else {
-    showJiraLoading();
-    loadJiraProjects();
-  }
-}
+  // Bouw de prompt die Claude via Atlassian MCP de issues ophaalt
+  // en als INSERT-statements teruggeeft die de gebruiker kan plakken
+  const supabaseInfo = `Supabase URL: ${SUPABASE_URL}\nSupabase anon key: ${SUPABASE_KEY}`;
 
-function showJiraConfig() {
+  // Haal bestaande jira_keys op zodat Claude geen duplicaten maakt
+  const existingKeys = state.tasks
+    .filter(t => t.jira_key)
+    .map(t => t.jira_key)
+    .join(', ') || 'geen';
+
+  // Zoek de Jira-lijst-id als die al bestaat
+  const jiraList = state.lists.find(l => l.name === 'Jira');
+  const listInfo = jiraList
+    ? `De "Jira" lijst bestaat al met id: ${jiraList.id}`
+    : 'De "Jira" lijst bestaat nog niet — maak die eerst aan in Supabase (tabel: lists, name="Jira", color="#0052CC") en gebruik dat id.';
+
+  const prompt = `Haal via de Atlassian MCP mijn openstaande Jira-issues op (toegewezen aan mij, nog niet Done) en voeg ze toe als taken in mijn Taken-app via Supabase.
+
+${supabaseInfo}
+Tabel: tasks
+Kolommen: list_id (uuid), text (varchar), priority (varchar: high/medium/low/none), done (bool, standaard false), position (int), jira_key (varchar), due_date (date of null)
+
+${listInfo}
+
+Al bestaande jira_keys (sla deze over): ${existingKeys}
+
+Prioriteit mapping: Highest/High → high, Medium → medium, Low/Lowest → low, onbekend → medium
+
+Stappen:
+1. Haal projecten op via Atlassian MCP
+2. Haal openstaande issues op (assignee = currentUser, statusCategory != Done)
+3. Maak voor elk issue een POST naar de Supabase tasks-tabel
+4. Geef een overzicht van wat je hebt toegevoegd`;
+
   document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
     <h3 style="display:flex;align-items:center;gap:8px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="#0052CC"><path d="M11.75 0C5.26 0 0 5.26 0 11.75s5.26 11.75 11.75 11.75 11.75-5.26 11.75-11.75S18.24 0 11.75 0zm5.84 13.3l-5.84 5.84-5.84-5.84 5.84-5.84 5.84 5.84zm-5.84-1.41L7.96 8.07l3.75-3.75 3.75 3.75-3.76 3.82z"/></svg>
-      Jira koppelen
+      Jira → Taken via Claude
     </h3>
-    <p style="font-size:12px;color:var(--text-tertiary);line-height:1.6">Vul je Jira-gegevens in. Je API-token kun je aanmaken op <strong>id.atlassian.net/manage-profile/security</strong>.</p>
-    <div>
-      <label>Jira domein</label>
-      <input id="jira-domain" placeholder="jouwbedrijf.atlassian.net" value="${esc(jiraState.domain)}"/>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6">
+      Directe API-calls worden geblokkeerd door CORS. Claude haalt via de <strong>Atlassian MCP</strong> je issues op en voegt ze direct in Supabase in.
+    </p>
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;font-size:11px;color:var(--text-tertiary);line-height:1.7;margin:4px 0">
+      <strong style="color:var(--text-secondary)">Wat Claude doet:</strong><br>
+      1. Jira-issues ophalen (Atlassian MCP)<br>
+      2. Taken aanmaken in Supabase<br>
+      3. Bestaande taken worden overgeslagen
     </div>
-    <div>
-      <label>E-mailadres</label>
-      <input id="jira-email" type="email" placeholder="naam@bedrijf.nl" value="${esc(jiraState.email)}"/>
-    </div>
-    <div>
-      <label>API Token</label>
-      <input id="jira-token" type="password" placeholder="ATATT3xFfGF0..." value="${esc(jiraState.token)}"/>
-    </div>
+    <p style="font-size:11px;color:var(--text-tertiary)">
+      Klik op "Openen in Claude" — na afloop klik je op "Verversen" om de nieuwe taken te laden.
+    </p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary btn-jira" onclick="saveJiraConfig()">Verbinden</button>
+      <button class="btn-primary" onclick="closeModal();loadAll();showToast('Ververs na afloop in Claude')" style="background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border-mid)">
+        ↻ Verversen
+      </button>
+      <button class="btn-primary btn-jira" onclick="window.open('https://claude.ai/new?q='+encodeURIComponent(document.getElementById('jira-prompt-text').value),'_blank');closeModal()">
+        Openen in Claude ↗
+      </button>
     </div>
+    <textarea id="jira-prompt-text" style="display:none">${prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/&lt;/g,'<').replace(/&gt;/g,'>')}</textarea>
   </div></div>`;
-  document.getElementById('jira-domain').focus();
-}
-
-function saveJiraConfig() {
-  const domain = document.getElementById('jira-domain').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
-  const email = document.getElementById('jira-email').value.trim();
-  const token = document.getElementById('jira-token').value.trim();
-  if (!domain || !email || !token) { showToast('Vul alle velden in'); return; }
-  jiraState.domain = domain;
-  jiraState.email = email;
-  jiraState.token = token;
-  localStorage.setItem('jira_domain', domain);
-  localStorage.setItem('jira_email', email);
-  localStorage.setItem('jira_token', token);
-  showJiraLoading();
-  loadJiraProjects();
-}
-
-function showJiraLoading() {
-  document.getElementById('modal-container').innerHTML = `<div class="modal-bg"><div class="modal jira-modal">
-    <h3>Jira laden...</h3>
-    <div class="empty-state" style="height:120px"><div class="spinner"></div></div>
-  </div></div>`;
-}
-
-async function jiraFetch(path) {
-  const creds = btoa(`${jiraState.email}:${jiraState.token}`);
-  // Jira REST API via Claude AI (CORS workaround via proxy hint)
-  // We use the Atlassian MCP if available, otherwise direct fetch
-  try {
-    const url = `https://${jiraState.domain}/rest/api/3/${path}`;
-    const r = await fetch(url, {
-      headers: {
-        'Authorization': `Basic ${creds}`,
-        'Accept': 'application/json',
-      }
-    });
-    if (!r.ok) {
-      const txt = await r.text();
-      throw new Error(`${r.status}: ${txt.slice(0,200)}`);
-    }
-    return await r.json();
-  } catch (e) {
-    throw e;
-  }
-}
-
-async function loadJiraProjects() {
-  try {
-    const data = await jiraFetch('project/search?maxResults=20&orderBy=name');
-    jiraState.projects = data.values || [];
-    if (!jiraState.projects.length) {
-      showJiraError('Geen projecten gevonden. Controleer je API-token en rechten.');
-      return;
-    }
-    jiraState.project = jiraState.projects[0].key;
-    loadJiraIssues();
-  } catch (e) {
-    showJiraError(e.message);
-  }
-}
-
-async function loadJiraIssues() {
-  try {
-    const jql = encodeURIComponent(`project = ${jiraState.project} AND assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC`);
-    const data = await jiraFetch(`search?jql=${jql}&maxResults=30&fields=summary,priority,issuetype,duedate,status,assignee`);
-    jiraState.issues = data.issues || [];
-    jiraState.selectedIssues = new Set(jiraState.issues.map(i => i.key));
-    showJiraIssues();
-  } catch (e) {
-    showJiraError(e.message);
-  }
-}
-
-function showJiraError(msg) {
-  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
-    <h3>Jira fout</h3>
-    <p style="font-size:13px;color:#A32D2D;line-height:1.6">${esc(msg)}</p>
-    <p style="font-size:12px;color:var(--text-tertiary);margin-top:4px">Tip: Zorg dat je Jira-domein correct is (bv. <code style="background:var(--bg-secondary);padding:1px 4px;border-radius:4px">bedrijf.atlassian.net</code>) en dat je API-token de juiste rechten heeft.</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Sluiten</button>
-      <button class="btn-primary" onclick="showJiraConfig()">Opnieuw instellen</button>
-    </div>
-  </div></div>`;
-}
-
-function showJiraIssues() {
-  const typeClass = { Bug: 'jira-type-bug', Story: 'jira-type-story', Task: 'jira-type-task', Epic: 'jira-type-epic' };
-  const projPills = jiraState.projects.slice(0, 8).map(p =>
-    `<button class="jira-proj-pill ${jiraState.project === p.key ? 'active' : ''}" onclick="switchJiraProject('${p.key}')">${esc(p.name)}</button>`
-  ).join('');
-
-  const issues = jiraState.issues.map(issue => {
-    const itype = issue.fields.issuetype?.name || 'Task';
-    const cls = typeClass[itype] || 'jira-type-task';
-    const due = issue.fields.duedate ? `<span style="font-size:10px;color:var(--text-tertiary)">${issue.fields.duedate}</span>` : '';
-    const sel = jiraState.selectedIssues.has(issue.key);
-    return `<div class="jira-issue ${sel ? 'selected' : ''}" onclick="toggleJiraIssue('${issue.key}')">
-      <div class="task-check ${sel ? 'checked' : ''}" style="flex-shrink:0;pointer-events:none;margin-top:2px"></div>
-      <span class="jira-type-badge ${cls}">${esc(itype)}</span>
-      <div style="flex:1;min-width:0">
-        <div class="jira-issue-title">${esc(issue.fields.summary || '')}</div>
-        <div class="jira-issue-meta">${esc(issue.key)} · ${esc(issue.fields.status?.name || '')} ${due}</div>
-      </div>
-    </div>`;
-  }).join('') || '<div style="font-size:13px;color:var(--text-tertiary);padding:16px 0;text-align:center">Geen openstaande issues gevonden</div>';
-
-  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
-    <h3 style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-      <span>Jira issues importeren</span>
-      <button style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:none;color:var(--text-tertiary);cursor:pointer;font-family:var(--font)" onclick="showJiraConfig()">Instellingen</button>
-    </h3>
-    <div class="jira-project-select">${projPills}</div>
-    <div class="jira-issue-list">${issues}</div>
-    <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px">${jiraState.selectedIssues.size} van ${jiraState.issues.length} geselecteerd</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary btn-jira" onclick="importJiraIssues()">Importeren als taken</button>
-    </div>
-  </div></div>`;
-}
-
-function toggleJiraIssue(key) {
-  if (jiraState.selectedIssues.has(key)) jiraState.selectedIssues.delete(key);
-  else jiraState.selectedIssues.add(key);
-  showJiraIssues();
-}
-
-function switchJiraProject(key) {
-  jiraState.project = key;
-  showJiraLoading();
-  loadJiraIssues();
-}
-
-async function importJiraIssues() {
-  const selected = jiraState.issues.filter(i => jiraState.selectedIssues.has(i.key));
-  if (!selected.length) { showToast('Selecteer minimaal één issue'); return; }
-
-  // Zoek of maak Jira-lijst
-  let jiraList = state.lists.find(l => l.name === 'Jira');
-  if (!jiraList) {
-    const res = await sb('lists', { method: 'POST', body: { name: 'Jira', color: '#0052CC', position: state.lists.length } });
-    if (!res || !res[0]) { showToast('Kon Jira-lijst niet aanmaken'); return; }
-    jiraList = res[0];
-    state.lists.push(jiraList);
-  }
-
-  const savedListId = state.activeListId;
-  state.activeListId = jiraList.id;
-
-  const prioMap = { 'Highest': 'high', 'High': 'high', 'Medium': 'medium', 'Low': 'low', 'Lowest': 'low' };
-  let added = 0;
-  for (const issue of selected) {
-    const prio = prioMap[issue.fields.priority?.name] || 'medium';
-    const due = issue.fields.duedate || null;
-    const existing = state.tasks.find(t => t.jira_key === issue.key);
-    if (existing) continue; // sla duplicaten over
-    const pos = state.tasks.filter(t => t.list_id === jiraList.id).length;
-    const body = { list_id: jiraList.id, text: issue.fields.summary, priority: prio, done: false, position: pos, jira_key: issue.key };
-    if (due) body.due_date = due;
-    const res = await sb('tasks', { method: 'POST', body });
-    if (res && res[0]) { state.tasks.push(res[0]); added++; }
-  }
-
-  state.activeListId = jiraList.id;
-  state.globalView = null;
-  closeModal();
-  render();
-  showToast(`${added} Jira-issues geïmporteerd${selected.length - added > 0 ? ` (${selected.length - added} al aanwezig)` : ''}`);
 }
 
 // ── Weekoverzicht exporteren ───────────────────────────

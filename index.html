@@ -126,9 +126,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .task-expand-btn{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:transform .15s;}
 .task-row.expanded .task-expand-btn{transform:rotate(90deg);}
 .task-expand-btn:hover{color:var(--text-secondary);background:var(--bg-tertiary);}
-.modal-wide{width:420px;}
-.modal-row-2{display:flex;gap:10px;}
-.modal-row-2>div{flex:1;}
+.waiting-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 10px;}
+.waiting-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;display:flex;align-items:center;gap:5px;}
+.waiting-pill:hover{background:var(--bg-secondary);}
+.waiting-pill.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500;}
+.waiting-pill .pill-count{font-size:10px;background:var(--bg-tertiary);padding:0 5px;border-radius:8px;color:var(--text-tertiary);}
+.waiting-pill.active .pill-count{background:var(--accent);color:#fff;}
 #topbar{padding:16px 20px 12px;border-bottom:0.5px solid var(--border-light);display:flex;flex-direction:column;gap:10px;}
 .list-header{display:flex;align-items:center;gap:10px;}
 .breadcrumb{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:3px;margin-bottom:3px;}
@@ -303,7 +306,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.4.0</span>
+      <span class="version-label">v2.5.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -335,7 +338,7 @@ const COLORS=[
 ];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none'};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null};
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
@@ -559,7 +562,10 @@ function getFiltered(){
     if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
     else if(state.globalView==='open')t=t.filter(t=>!t.done);
     else if(state.globalView==='done')t=t.filter(t=>t.done);
-    else if(state.globalView==='waiting')t=t.filter(t=>t.waiting_for&&!t.done);
+    else if(state.globalView==='waiting'){
+      t=t.filter(t=>t.waiting_for&&!t.done);
+      if(state.waitingFilter)t=t.filter(t=>t.waiting_for===state.waitingFilter);
+    }
   }else{
     t=state.tasks.filter(t=>t.list_id===state.activeListId);
     if(state.filter==='open')t=t.filter(t=>!t.done);
@@ -643,8 +649,32 @@ function renderTasks(){
   if(state.loading){area.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';return;}
   const isGlobal=!!state.globalView;
   if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
+
+  // Bewaar invoerveld waarden als form al open is
+  let savedText='', savedDue='', savedWaiting='';
+  if(state.inlineAddOpen){
+    savedText=document.getElementById('inline-task-text')?.value||'';
+    savedDue=document.getElementById('inline-task-due')?.value||'';
+    savedWaiting=document.getElementById('inline-task-waiting')?.value||'';
+  }
+  let personPills='';
+  if(state.globalView==='waiting'){
+    const allWaiting=state.tasks.filter(t=>t.waiting_for&&!t.done);
+    const counts={};
+    allWaiting.forEach(t=>{counts[t.waiting_for]=(counts[t.waiting_for]||0)+1;});
+    const persons=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    if(persons.length>1){
+      personPills=`<div class="waiting-pills">
+        ${persons.map(([name,count])=>`<button class="waiting-pill ${state.waitingFilter===name?'active':''}" onclick="setWaitingFilter('${esc(name)}')">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+          ${esc(name)}<span class="pill-count">${count}</span>
+        </button>`).join('')}
+      </div>`;
+    }
+  }
+
   const f=getFiltered();
-  let h=inlineAddHTML();
+  let h=inlineAddHTML()+personPills;
   if(!f.length){
     h+='<div class="empty-state" style="height:160px"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="4" width="24" height="24" rx="4"/><line x1="10" y1="12" x2="22" y2="12"/><line x1="10" y1="17" x2="18" y2="17"/><line x1="10" y1="22" x2="15" y2="22"/></svg><span>Geen taken gevonden</span></div>';
     area.innerHTML=h;return;
@@ -656,15 +686,25 @@ function renderTasks(){
   area.innerHTML=h;
   if(state.inlineAddOpen){
     const inp=document.getElementById('inline-task-text');
-    if(inp)inp.focus();
+    const due=document.getElementById('inline-task-due');
+    const waiting=document.getElementById('inline-task-waiting');
+    if(inp){
+      inp.value=savedText;
+      // Cursor aan het einde plaatsen
+      inp.focus();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+    if(due&&savedDue)due.value=savedDue;
+    if(waiting&&savedWaiting)waiting.value=savedWaiting;
   }
 }
 
 function render(){renderSidebar();renderTopbar();renderTasks();}
 
-function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;closeSidebar();render();}
-function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;closeSidebar();render();}
-function setFilter(f){state.filter=f;state.inlineAddOpen=false;render();}
+function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
+function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
+function setFilter(f){state.filter=f;state.waitingFilter=null;state.inlineAddOpen=false;render();}
+function setWaitingFilter(name){state.waitingFilter=state.waitingFilter===name?null:name;renderTasks();}
 function setSearch(v){state.search=v;renderTasks();}
 function startEditName(){state.editingListName=true;renderTopbar();}
 function cancelEditName(){state.editingListName=false;renderTopbar();}
@@ -676,7 +716,17 @@ function saveListName(){
 
 function openInlineAdd(){state.inlineAddOpen=true;state.inlineAddPrio='none';renderTasks();}
 function closeInlineAdd(){state.inlineAddOpen=false;state.inlineAddPrio='none';renderTasks();}
-function setInlinePrio(p){state.inlineAddPrio=p;renderTasks();}
+function setInlinePrio(p){
+  state.inlineAddPrio=p;
+  // Alleen de pill-stijlen updaten, niet de hele form herbouwen
+  const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
+  document.querySelectorAll('.prio-pill').forEach(btn=>{
+    const val=btn.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+    if(val){
+      btn.className='prio-pill'+(val===p&&pillClass[p]?' '+pillClass[p]:'');
+    }
+  });
+}
 async function submitInlineTask(){
   const inp=document.getElementById('inline-task-text');
   if(!inp)return;
@@ -782,8 +832,12 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.4.0', date:'2026-04-15', latest:true,
-      notes:['Filter op "Wacht op" per lijst via filterrij','Globale "Wacht op" weergave in de sidebar met teller','Toont alle openstaande taken die wachten op iemand anders']
+      version:'2.5.0', date:'2026-04-15', latest:true,
+      notes:['Filteren op persoon in "Wacht op" weergave','Klikbare persoonspills tonen wie er op wacht en hoeveel taken','Klik nogmaals om filter te verwijderen']
+    },
+    {
+      version:'2.4.0', date:'2026-04-15',
+      notes:['Filter op "Wacht op" per lijst en globaal','Globale "Wacht op" weergave in sidebar met teller']
     },
     {
       version:'2.3.0', date:'2026-04-14',

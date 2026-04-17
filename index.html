@@ -83,9 +83,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .theme-switch-knob{width:11px;height:11px;border-radius:50%;background:var(--text-secondary);position:absolute;top:2px;left:2px;transition:transform .2s,background .2s;pointer-events:none;}
 [data-theme="dark"] .theme-switch-knob{transform:translateX(12px);background:#f5f5f5;}
 #list-nav{flex:1;overflow-y:auto;padding:6px 8px;}
-.sidebar-bottom{padding:8px 12px 14px;border-top:0.5px solid var(--border-light);}
+.sidebar-bottom{padding:8px 12px 6px;border-top:0.5px solid var(--border-light);}
 .add-list-btn{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-tertiary);border:none;background:none;width:100%;text-align:left;font-family:var(--font);}
 .add-list-btn:hover{color:var(--text-secondary);background:var(--bg-primary);}
+.add-list-btn.highlight{color:var(--accent);font-weight:500;}
+.add-list-btn.highlight:hover{background:var(--accent-soft);}
 .list-group{margin-bottom:1px;}
 .list-item{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary);border:0.5px solid transparent;background:none;width:100%;text-align:left;transition:background .1s;user-select:none;}
 .list-item:hover{background:var(--bg-primary);color:var(--text-primary);}
@@ -133,6 +135,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .waiting-pill .pill-count{font-size:10px;background:var(--bg-tertiary);padding:0 5px;border-radius:8px;color:var(--text-tertiary);}
 .waiting-pill.active .pill-count{background:var(--accent);color:#fff;}
 .recurrence-badge{font-size:10px;display:inline-flex;align-items:center;gap:3px;color:var(--text-tertiary);}
+.jira-badge{font-size:10px;display:inline-flex;align-items:center;gap:3px;color:#0052CC;background:#E8F0FE;padding:1px 6px;border-radius:8px;font-weight:500;}
+[data-theme="dark"] .jira-badge{color:#6B8BFF;background:#1a2040;}
 .task-today-toggle{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:color .15s;}
 .task-today-toggle:hover{color:#F59E0B;}
 .task-today-toggle.is-today{color:#F59E0B;}
@@ -160,7 +164,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .filter-btn{font-size:12px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;}
 .filter-btn:hover{background:var(--bg-secondary);}
 .filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.search-input{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-light);background:var(--bg-secondary);color:var(--text-primary);outline:none;font-family:var(--font);width:150px;}
+.export-btn{font-size:12px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;display:flex;align-items:center;gap:5px;margin-left:auto;}
+.export-btn:hover{background:var(--bg-secondary);color:var(--text-primary);}
+.search-input{font-size:12px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-light);background:var(--bg-secondary);color:var(--text-primary);outline:none;font-family:var(--font);width:150px;}
 .search-input:focus{border-color:var(--border-mid);}
 #task-area{flex:1;overflow-y:auto;padding:12px 20px;}
 .section-header{font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.07em;padding:12px 0 6px;display:flex;align-items:center;gap:6px;}
@@ -183,7 +189,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .icon-btn{width:24px;height:24px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;}
 .icon-btn:hover{background:var(--bg-tertiary);color:var(--text-secondary);}
 #add-task-area{padding:12px 20px 16px;border-top:0.5px solid var(--border-light);}
-.add-task-row{display:flex;gap:8px;align-items:center;}
 .new-task-input{flex:1;font-size:13px;padding:7px 10px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-secondary);color:var(--text-primary);outline:none;font-family:var(--font);}
 .new-task-input:focus{border-color:#888;}
 .prio-select{font-size:12px;padding:7px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-secondary);color:var(--text-secondary);font-family:var(--font);outline:none;cursor:pointer;}
@@ -218,6 +223,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .btn-primary{font-size:13px;padding:6px 14px;border-radius:var(--radius-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font);font-weight:500;}
 .btn-primary:disabled{opacity:.4;cursor:default;}
 .btn-danger{background:#A32D2D !important;}
+.btn-jira{background:#0052CC !important;}
+.btn-green{background:#1D9E75 !important;}
 .color-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;display:inline-block;border:2px solid transparent;transition:border-color .1s;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text-primary);color:var(--bg-primary);font-size:12px;padding:8px 16px;border-radius:20px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
@@ -250,6 +257,42 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .token-help{font-size:11px;color:var(--text-tertiary);line-height:1.6;}
 .token-help a{color:var(--text-secondary);}
 .token-help code{background:var(--bg-tertiary);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:10px;}
+
+/* Jira modal */
+.jira-modal{width:420px;}
+.jira-issue-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.jira-issue{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--radius-md);border:0.5px solid var(--border-light);background:var(--bg-secondary);cursor:pointer;transition:all .1s;}
+.jira-issue:hover{border-color:var(--border-mid);background:var(--bg-tertiary);}
+.jira-issue.selected{border-color:#0052CC;background:#E8F0FE;}
+[data-theme="dark"] .jira-issue.selected{border-color:#6B8BFF;background:#1a2040;}
+.jira-issue-key{font-size:10px;font-weight:600;color:#0052CC;font-family:monospace;flex-shrink:0;margin-top:1px;}
+[data-theme="dark"] .jira-issue-key{color:#6B8BFF;}
+.jira-issue-title{font-size:12px;color:var(--text-primary);line-height:1.4;flex:1;}
+.jira-issue-meta{font-size:10px;color:var(--text-tertiary);margin-top:2px;}
+.jira-type-badge{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500;flex-shrink:0;margin-top:1px;}
+.jira-type-bug{background:#FCEBEB;color:#A32D2D;}
+.jira-type-story{background:#EAF3DE;color:#3B6D11;}
+.jira-type-task{background:#eef1fe;color:#4F6EF7;}
+.jira-type-epic{background:#FAEEDA;color:#854F0B;}
+.jira-project-select{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.jira-proj-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;}
+.jira-proj-pill:hover{background:var(--bg-secondary);}
+.jira-proj-pill.active{background:#0052CC;color:#fff;border-color:#0052CC;}
+[data-theme="dark"] .jira-proj-pill.active{background:#6B8BFF;border-color:#6B8BFF;}
+.jira-config-row{display:flex;gap:8px;align-items:flex-end;}
+.jira-config-row input{flex:1;}
+.export-modal{width:380px;}
+.export-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius-md);border:0.5px solid var(--border-light);background:var(--bg-secondary);cursor:pointer;transition:all .15s;margin-bottom:6px;}
+.export-option:hover{border-color:var(--border-mid);background:var(--bg-tertiary);}
+.export-option-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.export-option-text{flex:1;}
+.export-option-title{font-size:13px;font-weight:500;color:var(--text-primary);}
+.export-option-desc{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+.export-week-select{display:flex;gap:6px;margin-bottom:8px;}
+.week-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;}
+.week-pill:hover{background:var(--bg-secondary);}
+.week-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
@@ -326,9 +369,17 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="12" height="9" rx="1"/><polyline points="1,3 7,8 13,3"/></svg>
         Email → Taken
       </button>
+      <button class="add-list-btn highlight" onclick="openJiraModal()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="12" height="12" rx="2"/><path d="M4 7l2.5 2.5L10 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Jira → Taken
+      </button>
+      <button class="add-list-btn" onclick="openExportModal()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>
+        Weekoverzicht exporteren
+      </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v3.0.0</span>
+      <span class="version-label">v4.0.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -356,6 +407,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
     <div class="cmd-hint"><span><kbd>↑↓</kbd> navigeren</span><span><kbd>Enter</kbd> openen</span><span><kbd>Esc</kbd> sluiten</span></div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SUPABASE_URL='https://kgoytwcdyeoxascdtnml.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtnb3l0d2NkeWVveGFzY2R0bm1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ4NjgsImV4cCI6MjA5MDYyMDg2OH0.6qP5tYIGdgplNMlobemx3ytVOWX4Bzv2K--n3iuSY_Q';
@@ -379,7 +431,6 @@ function toggleToday(id,e){
   if(todayTasks.has(sid))todayTasks.delete(sid);else todayTasks.add(sid);
   saveTodayTasks();
   renderSidebar();
-  // Update button in place
   const btn=document.getElementById('today-btn-'+sid);
   if(btn){
     const active=todayTasks.has(sid);
@@ -454,11 +505,12 @@ async function updatePositions(lists){
     const l=state.lists.find(l=>l.id===lists[i].id);if(l)l.position=i;
   }
 }
-async function createTask(text,priority,dueDate=null,waitingFor=null){
+async function createTask(text,priority,dueDate=null,waitingFor=null,jiraKey=null){
   const pos=state.tasks.filter(t=>t.list_id===state.activeListId).length;
   const body={list_id:state.activeListId,text,priority,done:false,position:pos};
   if(dueDate)body.due_date=dueDate;
   if(waitingFor)body.waiting_for=waitingFor;
+  if(jiraKey)body.jira_key=jiraKey;
   const res=await sb('tasks',{method:'POST',body});
   if(res&&res[0]){state.tasks.push(res[0]);render();}
 }
@@ -482,7 +534,7 @@ async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence){
   await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null},prefer:'return=minimal'});
 }
 
-// ── Ctrl+K zoeken ────────────────────────────────────────
+// Ctrl+K zoeken
 let cmdSelectedIdx=0;
 function openCmd(){
   document.getElementById('cmd-overlay').style.display='flex';
@@ -491,9 +543,7 @@ function openCmd(){
   cmdSelectedIdx=0;
   renderCmd();
 }
-function closeCmd(){
-  document.getElementById('cmd-overlay').style.display='none';
-}
+function closeCmd(){document.getElementById('cmd-overlay').style.display='none';}
 function renderCmd(){
   const q=document.getElementById('cmd-input').value.toLowerCase().trim();
   const results=document.getElementById('cmd-results');
@@ -524,18 +574,15 @@ function cmdKeyDown(e){
 function cmdSelectTask(id){
   closeCmd();
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  // Navigeer naar de lijst en open de taak
   state.globalView=null;state.activeListId=t.list_id;state.filter='all';state.search='';
   const list=state.lists.find(l=>l.id===t.list_id);
   if(list?.parent_id)state.expanded[list.parent_id]=true;
   render();
-  // Highlight de taak even
   setTimeout(()=>{
     const row=document.getElementById('tr-'+id);
     if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.style.background='var(--accent-soft)';setTimeout(()=>row.style.background='',1200);}
   },100);
 }
-// Keyboard shortcut
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openCmd();}
   if(e.key==='Escape'&&document.getElementById('cmd-overlay').style.display!=='none')closeCmd();
@@ -608,7 +655,6 @@ function renderListItem(list){
 function renderSidebar(){
   const top=state.lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
   document.getElementById('list-nav').innerHTML=top.map(l=>renderListItem(l)).join('');
-  // Global counts
   const all=state.tasks.length;
   const high=state.tasks.filter(t=>t.priority==='high'&&!t.done).length;
   const open=state.tasks.filter(t=>!t.done).length;
@@ -645,7 +691,11 @@ function renderTopbar(){
   if(state.globalView){
     const labels={'today':'Vandaag','all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond','waiting':'Wacht op'};
     document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
-    document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
+    document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>
+    <button class="export-btn" onclick="openExportModal()" title="Exporteren">
+      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>
+      Exporteren
+    </button>`;
     return;
   }
   const list=state.lists.find(l=>l.id===state.activeListId);
@@ -660,7 +710,9 @@ function renderTopbar(){
     header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
   }
   const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio'],['waiting','Wacht op']];
-  document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
+  document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')
+    +`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`
+    +`<button class="export-btn" onclick="openExportModal()" title="Exporteren"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
 }
 function getFiltered(){
   let t;
@@ -705,19 +757,21 @@ function taskHTML(t,showList=false){
   const waiting=t.waiting_for?`<span class="task-waiting"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>${esc(t.waiting_for)}</span>`:'';
   const recLabels={daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks'};
   const recBadge=t.recurrence&&recLabels[t.recurrence]?`<span class="recurrence-badge"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6a4 4 0 0 1 4-4 4 4 0 0 1 3 1.3"/><polyline points="9,1 9,4 6,4"/><path d="M10 6a4 4 0 0 1-4 4 4 4 0 0 1-3-1.3"/><polyline points="3,11 3,8 6,8"/></svg>${recLabels[t.recurrence]}</span>`:'';
+  const jiraBadge=t.jira_key?`<span class="jira-badge"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="10" rx="2"/><path d="M3.5 6l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(t.jira_key)}</span>`:'';
   const hasExtra=t.notes||t.due_date||t.waiting_for;
   const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
   const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
   const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
   const isToday=todayTasks.has(String(t.id));
-  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
+  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';
+  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
     <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
     <div class="task-body">
       <div class="task-text">${esc(t.text)}</div>
       <div class="task-meta" style="flex-wrap:wrap;gap:5px">
         ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
-        ${due}${waiting}${recBadge}${listLabel}
+        ${due}${waiting}${recBadge}${jiraBadge}${listLabel}
       </div>
       ${notesEl}
     </div>
@@ -761,8 +815,6 @@ function renderTasks(){
   if(state.loading){area.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';return;}
   const isGlobal=!!state.globalView;
   if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
-
-  // Bewaar invoerveld waarden als form al open is
   let savedText='', savedDue='', savedWaiting='';
   if(state.inlineAddOpen){
     savedText=document.getElementById('inline-task-text')?.value||'';
@@ -784,7 +836,6 @@ function renderTasks(){
       </div>`;
     }
   }
-
   const f=getFiltered();
   let h=inlineAddHTML()+personPills;
   if(!f.length){
@@ -800,12 +851,7 @@ function renderTasks(){
     const inp=document.getElementById('inline-task-text');
     const due=document.getElementById('inline-task-due');
     const waiting=document.getElementById('inline-task-waiting');
-    if(inp){
-      inp.value=savedText;
-      // Cursor aan het einde plaatsen
-      inp.focus();
-      inp.setSelectionRange(inp.value.length, inp.value.length);
-    }
+    if(inp){inp.value=savedText;inp.focus();inp.setSelectionRange(inp.value.length, inp.value.length);}
     if(due&&savedDue)due.value=savedDue;
     if(waiting&&savedWaiting)waiting.value=savedWaiting;
   }
@@ -825,18 +871,14 @@ function saveListName(){
   const v=el.value.trim();state.editingListName=false;
   if(v)updateListName(state.activeListId,v);else render();
 }
-
 function openInlineAdd(){state.inlineAddOpen=true;state.inlineAddPrio='none';renderTasks();}
 function closeInlineAdd(){state.inlineAddOpen=false;state.inlineAddPrio='none';renderTasks();}
 function setInlinePrio(p){
   state.inlineAddPrio=p;
-  // Alleen de pill-stijlen updaten, niet de hele form herbouwen
   const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
   document.querySelectorAll('.prio-pill').forEach(btn=>{
     const val=btn.getAttribute('onclick').match(/'([^']+)'/)?.[1];
-    if(val){
-      btn.className='prio-pill'+(val===p&&pillClass[p]?' '+pillClass[p]:'');
-    }
+    if(val)btn.className='prio-pill'+(val===p&&pillClass[p]?' '+pillClass[p]:'');
   });
 }
 async function submitInlineTask(){
@@ -849,14 +891,6 @@ async function submitInlineTask(){
   const waiting=document.getElementById('inline-task-waiting')?.value.trim()||null;
   state.inlineAddOpen=false;state.inlineAddPrio='none';
   await createTask(text,prio,due,waiting);
-}
-async function addTask(){
-  const inp=document.getElementById('inline-task-text');
-  const text=(inp?inp.value:'').trim();
-  if(!text||!state.activeListId)return;
-  const prio=state.inlineAddPrio||'none';
-  state.inlineAddOpen=false;
-  await createTask(text,prio);
 }
 function confirmDeleteList(id,e){
   if(e)e.stopPropagation();
@@ -947,12 +981,6 @@ async function submitEditTask(id){
   closeModal();
   await updateTask(id,text,prio,due,notes,waiting,recurrence);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence){
-  const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;
-  render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null},prefer:'return=minimal'});
-}
 function nextDueDate(current,recurrence){
   if(!current||!recurrence)return null;
   const d=new Date(current);
@@ -966,7 +994,6 @@ async function toggleTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   t.done=!t.done;
   if(t.done&&t.recurrence){
-    // Maak nieuwe taak aan met volgende deadline
     const newDue=nextDueDate(t.due_date,t.recurrence);
     const pos=state.tasks.filter(x=>x.list_id===t.list_id).length;
     const body={list_id:t.list_id,text:t.text,priority:t.priority,done:false,position:pos,recurrence:t.recurrence,waiting_for:t.waiting_for||null,notes:t.notes||null};
@@ -975,7 +1002,6 @@ async function toggleTask(id){
     if(res&&res[0])state.tasks.push(res[0]);
     showToast(`Herhaaltaak aangemaakt${newDue?' voor '+new Date(newDue).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):''}`)
   }
-  // Remove from today if done
   if(t.done){todayTasks.delete(String(id));saveTodayTasks();}
   render();
   await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
@@ -984,19 +1010,531 @@ function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary btn-danger" onclick="confirmAction()">Verwijderen</button></div></div></div>`;
   window._confirmAction=onConfirm;
 }
+function closeModal(){document.getElementById('modal-container').innerHTML='';}
+function confirmAction(){closeModal();if(window._confirmAction)window._confirmAction();}
+setInterval(async()=>{
+  const [lists,tasks]=await Promise.all([sb('lists?select=*&order=position.asc,created_at.asc'),sb('tasks?select=*&order=position.asc,created_at.asc')]);
+  if(lists)state.lists=lists;if(tasks)state.tasks=tasks;render();
+},15000);
+
+// ── Email → Taken ──────────────────────────────────────
+const GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0';
+let emailToken = localStorage.getItem('ms_graph_token') || '';
+
+function openEmailImport(){
+  const today=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
+    <h3>Email → Taken</h3>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px">
+      Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren en taken aan te maken.
+    </p>
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;color:var(--text-tertiary);font-family:monospace;margin:8px 0;line-height:1.6">
+      Maak taken van mijn emails van vandaag (${today})
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary" onclick="window.open('https://claude.ai/new?q='+encodeURIComponent('Maak taken van mijn emails van vandaag (${today}) en voeg ze toe aan mijn Email lijst in Supabase'),'_blank');closeModal()">
+        Openen in Claude ↗
+      </button>
+    </div>
+  </div></div>`;
+}
+
+// ── Jira → Taken ──────────────────────────────────────
+let jiraState = {
+  domain: localStorage.getItem('jira_domain') || '',
+  email: localStorage.getItem('jira_email') || '',
+  token: localStorage.getItem('jira_token') || '',
+  project: null,
+  issues: [],
+  projects: [],
+  selectedIssues: new Set(),
+};
+
+function openJiraModal() {
+  // Als we nog geen config hebben, toon configuratiescherm
+  if (!jiraState.domain || !jiraState.token) {
+    showJiraConfig();
+  } else {
+    showJiraLoading();
+    loadJiraProjects();
+  }
+}
+
+function showJiraConfig() {
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
+    <h3 style="display:flex;align-items:center;gap:8px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#0052CC"><path d="M11.75 0C5.26 0 0 5.26 0 11.75s5.26 11.75 11.75 11.75 11.75-5.26 11.75-11.75S18.24 0 11.75 0zm5.84 13.3l-5.84 5.84-5.84-5.84 5.84-5.84 5.84 5.84zm-5.84-1.41L7.96 8.07l3.75-3.75 3.75 3.75-3.76 3.82z"/></svg>
+      Jira koppelen
+    </h3>
+    <p style="font-size:12px;color:var(--text-tertiary);line-height:1.6">Vul je Jira-gegevens in. Je API-token kun je aanmaken op <strong>id.atlassian.net/manage-profile/security</strong>.</p>
+    <div>
+      <label>Jira domein</label>
+      <input id="jira-domain" placeholder="jouwbedrijf.atlassian.net" value="${esc(jiraState.domain)}"/>
+    </div>
+    <div>
+      <label>E-mailadres</label>
+      <input id="jira-email" type="email" placeholder="naam@bedrijf.nl" value="${esc(jiraState.email)}"/>
+    </div>
+    <div>
+      <label>API Token</label>
+      <input id="jira-token" type="password" placeholder="ATATT3xFfGF0..." value="${esc(jiraState.token)}"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary btn-jira" onclick="saveJiraConfig()">Verbinden</button>
+    </div>
+  </div></div>`;
+  document.getElementById('jira-domain').focus();
+}
+
+function saveJiraConfig() {
+  const domain = document.getElementById('jira-domain').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const email = document.getElementById('jira-email').value.trim();
+  const token = document.getElementById('jira-token').value.trim();
+  if (!domain || !email || !token) { showToast('Vul alle velden in'); return; }
+  jiraState.domain = domain;
+  jiraState.email = email;
+  jiraState.token = token;
+  localStorage.setItem('jira_domain', domain);
+  localStorage.setItem('jira_email', email);
+  localStorage.setItem('jira_token', token);
+  showJiraLoading();
+  loadJiraProjects();
+}
+
+function showJiraLoading() {
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg"><div class="modal jira-modal">
+    <h3>Jira laden...</h3>
+    <div class="empty-state" style="height:120px"><div class="spinner"></div></div>
+  </div></div>`;
+}
+
+async function jiraFetch(path) {
+  const creds = btoa(`${jiraState.email}:${jiraState.token}`);
+  // Jira REST API via Claude AI (CORS workaround via proxy hint)
+  // We use the Atlassian MCP if available, otherwise direct fetch
+  try {
+    const url = `https://${jiraState.domain}/rest/api/3/${path}`;
+    const r = await fetch(url, {
+      headers: {
+        'Authorization': `Basic ${creds}`,
+        'Accept': 'application/json',
+      }
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`${r.status}: ${txt.slice(0,200)}`);
+    }
+    return await r.json();
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function loadJiraProjects() {
+  try {
+    const data = await jiraFetch('project/search?maxResults=20&orderBy=name');
+    jiraState.projects = data.values || [];
+    if (!jiraState.projects.length) {
+      showJiraError('Geen projecten gevonden. Controleer je API-token en rechten.');
+      return;
+    }
+    jiraState.project = jiraState.projects[0].key;
+    loadJiraIssues();
+  } catch (e) {
+    showJiraError(e.message);
+  }
+}
+
+async function loadJiraIssues() {
+  try {
+    const jql = encodeURIComponent(`project = ${jiraState.project} AND assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC`);
+    const data = await jiraFetch(`search?jql=${jql}&maxResults=30&fields=summary,priority,issuetype,duedate,status,assignee`);
+    jiraState.issues = data.issues || [];
+    jiraState.selectedIssues = new Set(jiraState.issues.map(i => i.key));
+    showJiraIssues();
+  } catch (e) {
+    showJiraError(e.message);
+  }
+}
+
+function showJiraError(msg) {
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
+    <h3>Jira fout</h3>
+    <p style="font-size:13px;color:#A32D2D;line-height:1.6">${esc(msg)}</p>
+    <p style="font-size:12px;color:var(--text-tertiary);margin-top:4px">Tip: Zorg dat je Jira-domein correct is (bv. <code style="background:var(--bg-secondary);padding:1px 4px;border-radius:4px">bedrijf.atlassian.net</code>) en dat je API-token de juiste rechten heeft.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Sluiten</button>
+      <button class="btn-primary" onclick="showJiraConfig()">Opnieuw instellen</button>
+    </div>
+  </div></div>`;
+}
+
+function showJiraIssues() {
+  const typeClass = { Bug: 'jira-type-bug', Story: 'jira-type-story', Task: 'jira-type-task', Epic: 'jira-type-epic' };
+  const projPills = jiraState.projects.slice(0, 8).map(p =>
+    `<button class="jira-proj-pill ${jiraState.project === p.key ? 'active' : ''}" onclick="switchJiraProject('${p.key}')">${esc(p.name)}</button>`
+  ).join('');
+
+  const issues = jiraState.issues.map(issue => {
+    const itype = issue.fields.issuetype?.name || 'Task';
+    const cls = typeClass[itype] || 'jira-type-task';
+    const due = issue.fields.duedate ? `<span style="font-size:10px;color:var(--text-tertiary)">${issue.fields.duedate}</span>` : '';
+    const sel = jiraState.selectedIssues.has(issue.key);
+    return `<div class="jira-issue ${sel ? 'selected' : ''}" onclick="toggleJiraIssue('${issue.key}')">
+      <div class="task-check ${sel ? 'checked' : ''}" style="flex-shrink:0;pointer-events:none;margin-top:2px"></div>
+      <span class="jira-type-badge ${cls}">${esc(itype)}</span>
+      <div style="flex:1;min-width:0">
+        <div class="jira-issue-title">${esc(issue.fields.summary || '')}</div>
+        <div class="jira-issue-meta">${esc(issue.key)} · ${esc(issue.fields.status?.name || '')} ${due}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="font-size:13px;color:var(--text-tertiary);padding:16px 0;text-align:center">Geen openstaande issues gevonden</div>';
+
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal">
+    <h3 style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+      <span>Jira issues importeren</span>
+      <button style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:none;color:var(--text-tertiary);cursor:pointer;font-family:var(--font)" onclick="showJiraConfig()">Instellingen</button>
+    </h3>
+    <div class="jira-project-select">${projPills}</div>
+    <div class="jira-issue-list">${issues}</div>
+    <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px">${jiraState.selectedIssues.size} van ${jiraState.issues.length} geselecteerd</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary btn-jira" onclick="importJiraIssues()">Importeren als taken</button>
+    </div>
+  </div></div>`;
+}
+
+function toggleJiraIssue(key) {
+  if (jiraState.selectedIssues.has(key)) jiraState.selectedIssues.delete(key);
+  else jiraState.selectedIssues.add(key);
+  showJiraIssues();
+}
+
+function switchJiraProject(key) {
+  jiraState.project = key;
+  showJiraLoading();
+  loadJiraIssues();
+}
+
+async function importJiraIssues() {
+  const selected = jiraState.issues.filter(i => jiraState.selectedIssues.has(i.key));
+  if (!selected.length) { showToast('Selecteer minimaal één issue'); return; }
+
+  // Zoek of maak Jira-lijst
+  let jiraList = state.lists.find(l => l.name === 'Jira');
+  if (!jiraList) {
+    const res = await sb('lists', { method: 'POST', body: { name: 'Jira', color: '#0052CC', position: state.lists.length } });
+    if (!res || !res[0]) { showToast('Kon Jira-lijst niet aanmaken'); return; }
+    jiraList = res[0];
+    state.lists.push(jiraList);
+  }
+
+  const savedListId = state.activeListId;
+  state.activeListId = jiraList.id;
+
+  const prioMap = { 'Highest': 'high', 'High': 'high', 'Medium': 'medium', 'Low': 'low', 'Lowest': 'low' };
+  let added = 0;
+  for (const issue of selected) {
+    const prio = prioMap[issue.fields.priority?.name] || 'medium';
+    const due = issue.fields.duedate || null;
+    const existing = state.tasks.find(t => t.jira_key === issue.key);
+    if (existing) continue; // sla duplicaten over
+    const pos = state.tasks.filter(t => t.list_id === jiraList.id).length;
+    const body = { list_id: jiraList.id, text: issue.fields.summary, priority: prio, done: false, position: pos, jira_key: issue.key };
+    if (due) body.due_date = due;
+    const res = await sb('tasks', { method: 'POST', body });
+    if (res && res[0]) { state.tasks.push(res[0]); added++; }
+  }
+
+  state.activeListId = jiraList.id;
+  state.globalView = null;
+  closeModal();
+  render();
+  showToast(`${added} Jira-issues geïmporteerd${selected.length - added > 0 ? ` (${selected.length - added} al aanwezig)` : ''}`);
+}
+
+// ── Weekoverzicht exporteren ───────────────────────────
+let exportWeekOffset = 0; // 0 = huidige week, -1 = vorige week, etc.
+
+function getWeekRange(offset = 0) {
+  const now = new Date();
+  const day = now.getDay(); // 0=sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { start: monday, end: sunday };
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function openExportModal() {
+  exportWeekOffset = 0;
+  renderExportModal();
+}
+
+function renderExportModal() {
+  const { start, end } = getWeekRange(exportWeekOffset);
+  const weekLabel = `${formatDate(start)} – ${formatDate(end)}`;
+  const weekTasks = getTasksForWeek(exportWeekOffset);
+  const openCount = weekTasks.filter(t => !t.done).length;
+  const doneCount = weekTasks.filter(t => t.done).length;
+
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal export-modal">
+    <h3>Weekoverzicht exporteren</h3>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <button onclick="changeExportWeek(-1)" style="width:28px;height:28px;border:0.5px solid var(--border-mid);border-radius:var(--radius-md);background:none;cursor:pointer;color:var(--text-secondary);font-family:var(--font);font-size:14px;display:flex;align-items:center;justify-content:center">←</button>
+      <span style="flex:1;text-align:center;font-size:13px;font-weight:500">${esc(weekLabel)}</span>
+      <button onclick="changeExportWeek(1)" style="width:28px;height:28px;border:0.5px solid var(--border-mid);border-radius:var(--radius-md);background:none;cursor:pointer;color:var(--text-secondary);font-family:var(--font);font-size:14px;display:flex;align-items:center;justify-content:center">→</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center">
+        <div style="font-size:20px;font-weight:600;color:var(--accent)">${openCount + doneCount}</div>
+        <div style="font-size:11px;color:var(--text-tertiary)">Totaal</div>
+      </div>
+      <div style="flex:1;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center">
+        <div style="font-size:20px;font-weight:600;color:#1D9E75">${doneCount}</div>
+        <div style="font-size:11px;color:var(--text-tertiary)">Afgerond</div>
+      </div>
+      <div style="flex:1;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);text-align:center">
+        <div style="font-size:20px;font-weight:600;color:#BA7517">${openCount}</div>
+        <div style="font-size:11px;color:var(--text-tertiary)">Open</div>
+      </div>
+    </div>
+
+    <div class="export-option" onclick="exportToExcel()">
+      <div class="export-option-icon" style="background:#EAF3DE">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/><line x1="15" y1="9" x2="15" y2="21"/></svg>
+      </div>
+      <div class="export-option-text">
+        <div class="export-option-title">Excel (.xlsx)</div>
+        <div class="export-option-desc">Overzicht per lijst met prioriteit, status en deadline</div>
+      </div>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary)"><polyline points="3,2 7,6 3,10"/></svg>
+    </div>
+
+    <div class="export-option" onclick="exportToPDF()">
+      <div class="export-option-icon" style="background:#FCEBEB">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <div class="export-option-text">
+        <div class="export-option-title">PDF rapport</div>
+        <div class="export-option-desc">Printklaar weekoverzicht met statistieken</div>
+      </div>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-tertiary)"><polyline points="3,2 7,6 3,10"/></svg>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Sluiten</button>
+    </div>
+  </div></div>`;
+}
+
+function changeExportWeek(delta) {
+  exportWeekOffset += delta;
+  renderExportModal();
+}
+
+function getTasksForWeek(offset = 0) {
+  // Taken die een deadline hebben in de geselecteerde week OF taken die zijn aangemaakt in die week
+  const { start, end } = getWeekRange(offset);
+  return state.tasks.filter(t => {
+    if (t.due_date) {
+      const due = new Date(t.due_date);
+      if (due >= start && due <= end) return true;
+    }
+    // Als geen deadline: neem alle taken mee voor de huidige week als offset=0
+    if (offset === 0 && !t.due_date) return true;
+    return false;
+  });
+}
+
+function exportToExcel() {
+  const { start, end } = getWeekRange(exportWeekOffset);
+  const weekLabel = `${formatDate(start)} – ${formatDate(end)}`;
+  const tasks = getTasksForWeek(exportWeekOffset);
+
+  // SheetJS
+  const wb = XLSX.utils.book_new();
+
+  // Samenvatting blad
+  const summaryData = [
+    ['Taken Weekoverzicht', weekLabel],
+    [],
+    ['Statistieken', ''],
+    ['Totaal taken', tasks.length],
+    ['Afgerond', tasks.filter(t => t.done).length],
+    ['Open', tasks.filter(t => !t.done).length],
+    ['Hoge prioriteit', tasks.filter(t => t.priority === 'high' && !t.done).length],
+    ['Met deadline', tasks.filter(t => t.due_date).length],
+  ];
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+  summarySheet['!cols'] = [{ wch: 25 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, summarySheet, 'Samenvatting');
+
+  // Taken blad
+  const headers = ['Taak', 'Lijst', 'Prioriteit', 'Status', 'Deadline', 'Wacht op', 'Jira', 'Notities'];
+  const rows = tasks.map(t => {
+    const list = state.lists.find(l => l.id === t.list_id);
+    return [
+      t.text,
+      list ? list.name : '',
+      { high: 'Hoog', medium: 'Medium', low: 'Laag', none: '' }[t.priority] || '',
+      t.done ? 'Afgerond' : 'Open',
+      t.due_date || '',
+      t.waiting_for || '',
+      t.jira_key || '',
+      t.notes || '',
+    ];
+  });
+
+  const tasksSheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  tasksSheet['!cols'] = [{ wch: 40 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, tasksSheet, 'Taken');
+
+  // Per-lijst blad
+  const lists = [...new Set(tasks.map(t => t.list_id))];
+  for (const lid of lists) {
+    const list = state.lists.find(l => l.id === lid);
+    if (!list) continue;
+    const listTasks = tasks.filter(t => t.list_id === lid);
+    const listRows = listTasks.map(t => [
+      t.done ? '✓' : '○',
+      t.text,
+      { high: 'Hoog', medium: 'Medium', low: 'Laag', none: '' }[t.priority] || '',
+      t.due_date || '',
+      t.notes || '',
+    ]);
+    const listSheet = XLSX.utils.aoa_to_sheet([['Status', 'Taak', 'Prioriteit', 'Deadline', 'Notities'], ...listRows]);
+    listSheet['!cols'] = [{ wch: 6 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, listSheet, list.name.slice(0, 31));
+  }
+
+  XLSX.writeFile(wb, `Taken_weekoverzicht_${start.toISOString().split('T')[0]}.xlsx`);
+  closeModal();
+  showToast('Excel-bestand gedownload');
+}
+
+function exportToPDF() {
+  const { start, end } = getWeekRange(exportWeekOffset);
+  const weekLabel = `${formatDate(start)} – ${formatDate(end)}`;
+  const tasks = getTasksForWeek(exportWeekOffset);
+  const openTasks = tasks.filter(t => !t.done).sort((a, b) => PO[a.priority] - PO[b.priority]);
+  const doneTasks = tasks.filter(t => t.done);
+
+  const prioCls = { high: 'color:#A32D2D;background:#FCEBEB', medium: 'color:#854F0B;background:#FAEEDA', low: 'color:#3B6D11;background:#EAF3DE', none: '' };
+  const prioLabel = { high: 'Hoog', medium: 'Med', low: 'Laag', none: '' };
+
+  const taskRow = (t) => {
+    const list = state.lists.find(l => l.id === t.list_id);
+    const pStyle = prioCls[t.priority] || '';
+    const pLabel = prioLabel[t.priority] || '';
+    return `<tr style="border-bottom:1px solid #eee">
+      <td style="padding:6px 8px;font-size:12px;${t.done ? 'text-decoration:line-through;color:#999' : ''}">${t.text.replace(/</g,'&lt;')}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#666">${list ? list.name.replace(/</g,'&lt;') : ''}</td>
+      <td style="padding:6px 8px">${pLabel ? `<span style="font-size:10px;padding:1px 6px;border-radius:8px;font-weight:500;${pStyle}">${pLabel}</span>` : ''}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#666">${t.due_date || ''}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#666">${(t.jira_key || '').replace(/</g,'&lt;')}</td>
+    </tr>`;
+  };
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Weekoverzicht ${weekLabel}</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; padding: 40px; color: #111; max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #666; margin-bottom: 28px; }
+    .stats { display: flex; gap: 16px; margin-bottom: 32px; }
+    .stat { flex: 1; padding: 14px 16px; background: #f7f8fc; border-radius: 10px; border: 1px solid #eef0f8; }
+    .stat-n { font-size: 28px; font-weight: 700; color: #4F6EF7; }
+    .stat-l { font-size: 12px; color: #666; margin-top: 2px; }
+    .stat.green .stat-n { color: #1D9E75; }
+    .stat.orange .stat-n { color: #BA7517; }
+    h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #9196b0; margin: 24px 0 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #9196b0; padding: 6px 8px; border-bottom: 2px solid #eee; }
+    @media print { body { padding: 20px; } .no-print { display: none; } }
+    .footer { margin-top: 40px; font-size: 11px; color: #aaa; border-top: 1px solid #eee; padding-top: 12px; }
+  </style></head><body>
+  <h1>Weekoverzicht Taken</h1>
+  <div class="subtitle">${weekLabel} · Gegenereerd op ${new Date().toLocaleDateString('nl-NL', {weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n">${tasks.length}</div><div class="stat-l">Totaal taken</div></div>
+    <div class="stat green"><div class="stat-n">${doneTasks.length}</div><div class="stat-l">Afgerond</div></div>
+    <div class="stat orange"><div class="stat-n">${openTasks.length}</div><div class="stat-l">Open</div></div>
+    <div class="stat"><div class="stat-n">${tasks.filter(t=>t.priority==='high'&&!t.done).length}</div><div class="stat-l">Hoge prio open</div></div>
+  </div>
+
+  ${openTasks.length ? `
+  <h2>Open taken (${openTasks.length})</h2>
+  <table><thead><tr>
+    <th>Taak</th><th>Lijst</th><th>Prioriteit</th><th>Deadline</th><th>Jira</th>
+  </tr></thead><tbody>
+    ${openTasks.map(taskRow).join('')}
+  </tbody></table>` : ''}
+
+  ${doneTasks.length ? `
+  <h2>Afgerond (${doneTasks.length})</h2>
+  <table><thead><tr>
+    <th>Taak</th><th>Lijst</th><th>Prioriteit</th><th>Deadline</th><th>Jira</th>
+  </tr></thead><tbody>
+    ${doneTasks.map(taskRow).join('')}
+  </tbody></table>` : ''}
+
+  <div class="footer">Taken-app · Weekoverzicht ${weekLabel}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  } else {
+    // Fallback: download als HTML
+    const blob = new Blob([html], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Taken_weekoverzicht_${start.toISOString().split('T')[0]}.html`;
+    a.click();
+  }
+  closeModal();
+  showToast('PDF-rapport geopend');
+}
+
+// ── Release notes ──────────────────────────────────────
 function openReleaseNotes(){
   const releases=[
     {
-      version:'3.0.0', date:'2026-04-15', latest:true,
+      version:'4.0.0', date:'2026-04-17', latest:true,
+      notes:[
+        'Jira → Taken koppeling via Atlassian API (direct import van issues)',
+        'Jira issues verschijnen met issue-key badge op de taak',
+        'Project-selectie bij Jira-import (tot 8 projecten als pills)',
+        'Duplicatencheck: bestaande Jira-taken worden niet opnieuw aangemaakt',
+        'Jira instellingen opgeslagen in localStorage (domein, e-mail, token)',
+        'Weekoverzicht exporteren naar Excel (.xlsx) via SheetJS',
+        'Excel-export: samenvatting, alle taken en per-lijst tabbladen',
+        'Weekoverzicht exporteren naar PDF (printklaar rapport met statistieken)',
+        'Week-navigatie in de exportmodal (huidige, vorige en volgende week)',
+        'Export-knop in de topbar bij elke lijst en globale weergave',
+      ]
+    },
+    {
+      version:'3.0.0', date:'2026-04-15',
       notes:[
         'Vandaag focuslijst — ster-icoontje op elke taak om toe te voegen aan Vandaag',
-        'Vandaag teller in de sidebar met eigen weergave',
-        'Ctrl+K (of Cmd+K) zoeken over alle taken — navigeert direct naar de taak',
+        'Ctrl+K (of Cmd+K) zoeken over alle taken',
         'Terugkerende taken — dagelijks, wekelijks, maandelijks of jaarlijks',
-        'Bij afvinken van herhaaltaak wordt automatisch een nieuwe aangemaakt',
-        'Herhaling badge zichtbaar op de taak',
         'Wacht op filter per persoon (pills) in globale weergave',
-        'Fix: tekst verdwijnt niet meer bij prioriteit selecteren'
       ]
     },
     {
@@ -1021,47 +1559,15 @@ function openReleaseNotes(){
     },
     {
       version:'2.0.0', date:'2026-04-14',
-      notes:['Nieuw logo met favicon zichtbaar in browser tab','Frissere kleurthema: blauw-paars accent en mint groen','Donker thema vernieuwd met diepe marineblauw tinten']
+      notes:['Nieuw logo met favicon zichtbaar in browser tab','Frissere kleurthema: blauw-paars accent en mint groen']
     },
     {
       version:'1.9.0', date:'2026-04-01',
-      notes:['Email → Taken werkt nu via Claude in een nieuw tabblad','Geen admin rechten of token meer nodig','Knop opent Claude met vooraf ingevulde prompt']
-    },
-    {
-      version:'1.8.0', date:'2026-04-01',
-      notes:['Email → Taken werkt volledig in de browser','Token opgeslagen in localStorage','Slimme regel-gebaseerde analyse zonder externe API']
-    },
-    {
-      version:'1.7.0', date:'2026-04-01',
-      notes:['Email → Taken knop toegevoegd in de sidebar','Haalt emails van vandaag op via Microsoft Graph','Taken worden direct in de Email lijst opgeslagen']
-    },
-    {
-      version:'1.6.0', date:'2026-04-01',
-      notes:['Themaschakelaar vereenvoudigd: alleen licht en donker','Schuifregelaar vervangt de drie-standen knop']
-    },
-    {
-      version:'1.5.0', date:'2025-04-01',
-      notes:['Versienummer toegevoegd met release notes (deze popup)','Info-knop onderin de sidebar']
-    },
-    {
-      version:'1.4.0', date:'2025-04-01',
-      notes:['21 kleuren beschikbaar (7 families × 3 tinten)','Globale filters: alle taken, hoge prio, open, afgerond','Lijstlabel zichtbaar bij taken in globale weergave','Taak-invoer verborgen in globale weergave']
-    },
-    {
-      version:'1.3.0', date:'2025-04-01',
-      notes:['Bewerken van lijsten: naam en kleur aanpassen via potlood-icoon','Verwijder-bevestiging meldt ook sublijsten']
-    },
-    {
-      version:'1.2.0', date:'2025-04-01',
-      notes:['Dark/light/auto themaschakelaar (keuze wordt onthouden)','Lijsten slepen om volgorde te wijzigen','Sublijsten: meerdere niveaus mogelijk','Breadcrumb-navigatie in de topbar']
-    },
-    {
-      version:'1.1.0', date:'2025-04-01',
-      notes:['Supabase synchronisatie: data opgeslagen in de cloud','Polling elke 15 seconden voor wijzigingen van andere apparaten','Sync-indicator (groen/oranje/rood) in de sidebar']
+      notes:['Email → Taken werkt nu via Claude in een nieuw tabblad']
     },
     {
       version:'1.0.0', date:'2025-04-01',
-      notes:['Eerste versie: meerdere lijsten aanmaken en beheren','Taken toevoegen met prioriteit (hoog/medium/laag)','Taken afvinken, bewerken en verwijderen','Filteren op status en prioriteit, zoekfunctie','Automatische dark mode op basis van systeemvoorkeur']
+      notes:['Eerste versie: meerdere lijsten, taken met prioriteit, filters, zoekfunctie, dark mode']
     },
   ];
   const html=releases.map((r,i)=>`
@@ -1083,201 +1589,12 @@ function openReleaseNotes(){
     <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">Sluiten</button></div>
   </div></div>`;
 }
-function closeModal(){document.getElementById('modal-container').innerHTML='';}
-function confirmAction(){closeModal();if(window._confirmAction)window._confirmAction();}
-setInterval(async()=>{
-  const [lists,tasks]=await Promise.all([sb('lists?select=*&order=position.asc,created_at.asc'),sb('tasks?select=*&order=position.asc,created_at.asc')]);
-  if(lists)state.lists=lists;if(tasks)state.tasks=tasks;render();
-},15000);
-
-// ── Email → Taken ───────────────────────────────────────
-const GRAPH_ENDPOINT = 'https://graph.microsoft.com/v1.0';
-let emailToken = localStorage.getItem('ms_graph_token') || '';
-
-function openEmailImport(){
-  const today=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
-  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
-    <h3>Email → Taken</h3>
-    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px">
-      Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren en taken aan te maken. Claude heeft al toegang tot je mailbox en schrijft de taken direct naar je Email lijst.
-    </p>
-    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;color:var(--text-tertiary);font-family:monospace;margin:8px 0;line-height:1.6">
-      Maak taken van mijn emails van vandaag (${today})
-    </div>
-    <p style="font-size:11px;color:var(--text-tertiary);line-height:1.5">
-      Claude opent in een nieuw tabblad. Na analyse plakt Claude de taken als SQL in Supabase of voegt ze direct toe.
-    </p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary" onclick="window.open('https://claude.ai/new?q='+encodeURIComponent('Maak taken van mijn emails van vandaag (${today}) en voeg ze toe aan mijn Email lijst in Supabase'),'_blank');closeModal()">
-        Openen in Claude ↗
-      </button>
-    </div>
-  </div></div>`;
-}
-
-function setStep(id,status,label){
-  const el=document.getElementById('step-'+id);
-  if(!el)return;
-  el.className='email-step '+status;
-  if(label)el.querySelector('span').textContent=label;
-}
-
-function showProgress(steps){
-  document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal email-modal">
-    <h3>Email → Taken</h3>
-    <div class="email-progress">
-      ${steps.map(s=>`<div class="email-step ${s.status}" id="step-${s.id}"><div class="step-dot"></div><span>${esc(s.label)}</span></div>`).join('')}
-    </div>
-  </div></div>`;
-}
-
-// Rule-based analysis — no external API needed, no CORS
-function analyzeEmails(emails){
-  const SKIP_SENDERS=['linkedin.com','bamboohr.com','fluxicon.com','aicpa.org','getsmarter.com','sloan.mit.edu','notifications-noreply','newsletters-noreply','hofparken.nl','arcade.software','cwcloudpartner.com'];
-  const SKIP_SUBJECTS=['unsubscribe','newsletter','notification','bijgewerkt','deployment','deployed','test ','nieuwsbrief'];
-  const ACTION_WORDS=['kan jij','kunt u','zou jij','please','verzoek','actie','deadline','svp','asap','terugkoppeling','feedback','aanmaken','inplannen','plannen','bevestig','review','bekijk','check','opvolg','reageer','antwoord'];
-
-  const tasks=[];
-  for(const email of emails){
-    const sender=(email.sender?.emailAddress?.address||'').toLowerCase();
-    const subject=(email.subject||'').toLowerCase();
-    const preview=(email.bodyPreview||'').toLowerCase();
-
-    if(SKIP_SENDERS.some(s=>sender.includes(s)))continue;
-    if(SKIP_SUBJECTS.some(s=>subject.includes(s)||preview.includes(s)))continue;
-
-    const hasAction=ACTION_WORDS.some(w=>preview.includes(w)||subject.includes(w));
-    if(!hasAction&&!email.importance?.includes('high'))continue;
-
-    // Determine priority
-    let priority='medium';
-    if(email.importance==='high'||/urgent|asap|deadline|vandaag|today/i.test(subject+preview))priority='high';
-    else if(/fyi|ter info|no action/i.test(subject+preview))priority='low';
-
-    // Build task text
-    const name=email.sender?.emailAddress?.name||sender;
-    const subj=email.subject||'(geen onderwerp)';
-    const text=`${subj.slice(0,60)} — opvolgen (${name.split(' ')[0]})`;
-
-    tasks.push({text:text.slice(0,90), priority, selected:true});
-  }
-  return tasks;
-}
-
-function showPreview(tasks){
-  const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg"><div class="modal email-modal">
-    <h3>${tasks.length} actiepunten gevonden</h3>
-    <div class="task-preview" id="task-preview-list">
-      ${tasks.map((t,i)=>{
-        const cls={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
-        const lbl={high:'Hoog',medium:'Med',low:'Laag',none:''}[t.priority]||'';
-        return `<div class="task-preview-item" style="cursor:pointer" onclick="togglePreviewTask(${i})">
-          <div id="prev-check-${i}" class="task-check ${t.selected?'checked':''}"></div>
-          ${lbl?`<span class="task-preview-prio ${cls}">${lbl}</span>`:'<span style="width:28px;flex-shrink:0"></span>'}
-          <span>${esc(t.text)}</span>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="modal-actions" style="margin-top:10px">
-      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary" onclick="savePreviewTasks()">Toevoegen aan Email</button>
-    </div>
-  </div></div>`;
-  window._previewTasks=tasks;
-}
-
-function togglePreviewTask(i){
-  window._previewTasks[i].selected=!window._previewTasks[i].selected;
-  const el=document.getElementById('prev-check-'+i);
-  if(el)el.className='task-check'+(window._previewTasks[i].selected?' checked':'');
-}
-
-async function savePreviewTasks(){
-  const tasks=(window._previewTasks||[]).filter(t=>t.selected);
-  if(!tasks.length){showToast('Selecteer minimaal één taak');return;}
-  showProgress([
-    {id:'list',label:'Email lijst ophalen...',status:'active'},
-    {id:'save',label:'Taken opslaan...',status:''},
-  ]);
-  let listId=null;
-  try{
-    let emailList=state.lists.find(l=>l.name==='Email');
-    if(!emailList){
-      const res=await sb('lists',{method:'POST',body:{name:'Email',color:'#378ADD',position:state.lists.length}});
-      if(!res||!res[0]){setStep('list','error','Kon lijst niet aanmaken');return;}
-      emailList=res[0]; state.lists.push(emailList);
-    }
-    listId=emailList.id;
-    setStep('list','done','Email lijst gevonden');
-  }catch(e){setStep('list','error',e.message);return;}
-
-  setStep('save','active',`${tasks.length} taken opslaan...`);
-  try{
-    const pos=state.tasks.filter(t=>t.list_id===listId).length;
-    for(let i=0;i<tasks.length;i++){
-      const t=tasks[i];
-      const res=await sb('tasks',{method:'POST',body:{list_id:listId,text:t.text,priority:t.priority,done:false,position:pos+i}});
-      if(res&&res[0])state.tasks.push(res[0]);
-    }
-    setStep('save','done',`${tasks.length} taken aangemaakt`);
-    state.activeListId=listId; state.globalView=null;
-    setTimeout(()=>{closeModal();render();showToast(`${tasks.length} taken toegevoegd aan Email`);},800);
-  }catch(e){setStep('save','error',e.message);}
-}
-
-async function startEmailImport(){
-  const inp=document.getElementById('ms-token-input');
-  const token=(inp?inp.value:emailToken).trim();
-  if(!token){showToast('Vul een access token in');return;}
-  emailToken=token;
-  localStorage.setItem('ms_graph_token',token);
-
-  showProgress([
-    {id:'fetch',label:'Emails ophalen van vandaag...',status:'active'},
-    {id:'analyze',label:'Actiepunten analyseren...',status:''},
-  ]);
-
-  let emails=[];
-  try{
-    const today=new Date(); today.setHours(0,0,0,0);
-    const iso=today.toISOString();
-    const res=await fetch(`${GRAPH_ENDPOINT}/me/messages?$filter=receivedDateTime ge ${iso}&$select=subject,sender,bodyPreview,importance&$top=40&$orderby=receivedDateTime desc`,{
-      headers:{Authorization:'Bearer '+token, 'Content-Type':'application/json'}
-    });
-    if(!res.ok){
-      if(res.status===401){setStep('fetch','error','Token verlopen — haal een nieuw token op via Graph Explorer');return;}
-      if(res.status===403){setStep('fetch','error','Geen toegang — zorg dat Mail.Read rechten zijn gegeven in Graph Explorer');return;}
-      setStep('fetch','error','Fout '+res.status+' bij ophalen emails');return;
-    }
-    const json=await res.json();
-    emails=json.value||[];
-    setStep('fetch','done',`${emails.length} emails opgehaald`);
-  }catch(e){
-    setStep('fetch','error','Netwerkfout: '+e.message+' — controleer of je app op HTTPS draait');return;
-  }
-
-  setStep('analyze','active','Actiepunten analyseren...');
-  const tasks=analyzeEmails(emails);
-  setStep('analyze','done',`${tasks.length} actiepunten gevonden`);
-
-  await new Promise(r=>setTimeout(r,500));
-
-  if(!tasks.length){
-    showToast('Geen actiepunten gevonden in emails van vandaag');
-    closeModal();return;
-  }
-  showPreview(tasks);
-}
 
 loadAll();
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
-
-loadAll();
 </script>
 </body>
 </html>

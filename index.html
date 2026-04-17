@@ -78,6 +78,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .sync-dot.syncing{background:#BA7517;animation:pulse 1s infinite;}
 .sync-dot.error{background:#A32D2D;}
 .theme-switch{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-tertiary);}
+.lang-switch{font-size:10px;font-weight:600;color:var(--text-tertiary);cursor:pointer;border:0.5px solid var(--border-mid);border-radius:20px;padding:2px 8px;background:none;font-family:var(--font);transition:all .1s;line-height:1.4;}
+.lang-switch:hover{background:var(--bg-primary);color:var(--text-secondary);}
 .theme-switch-track{width:28px;height:16px;border-radius:8px;background:var(--bg-tertiary);border:0.5px solid var(--border-mid);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
 [data-theme="dark"] .theme-switch-track{background:#444;}
 .theme-switch-knob{width:11px;height:11px;border-radius:50%;background:var(--text-secondary);position:absolute;top:2px;left:2px;transition:transform .2s,background .2s;pointer-events:none;}
@@ -299,6 +301,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         </div>
         <div class="sidebar-controls">
           <div class="sync-dot" id="sync-dot"></div>
+          <button class="lang-switch" id="lang-switch" onclick="toggleLang()">NL</button>
           <div class="theme-switch" title="Donker/licht">
             <span style="font-size:10px;opacity:.6">☀</span>
             <div class="theme-switch-track" onclick="toggleTheme()">
@@ -362,7 +365,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v4.2.0</span>
+      <span class="version-label">v4.3.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -384,10 +387,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
   <div class="cmd-box">
     <div class="cmd-input-row">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--text-tertiary)"><circle cx="6.5" cy="6.5" r="4"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
-      <input class="cmd-input" id="cmd-input" placeholder="Zoeken in alle taken..." oninput="renderCmd()" onkeydown="cmdKeyDown(event)"/>
+      <input class="cmd-input" id="cmd-input" placeholder="${tr('searchAllPH')}" oninput="renderCmd()" onkeydown="cmdKeyDown(event)"/>
     </div>
     <div class="cmd-results" id="cmd-results"></div>
-    <div class="cmd-hint"><span><kbd>↑↓</kbd> navigeren</span><span><kbd>Enter</kbd> openen</span><span><kbd>Esc</kbd> sluiten</span></div>
+    <div class="cmd-hint"><span><kbd>↑↓</kbd> ${tr('nav')}</span><span><kbd>Enter</kbd> ${tr('enterOp')}</span><span><kbd>Esc</kbd> ${tr('escCl')}</span></div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -432,8 +435,94 @@ function applyTheme(){
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
 }
+
 function toggleTheme(){ isDark = !isDark; applyTheme(); }
 applyTheme();
+
+// Language
+let lang = localStorage.getItem('lang') || 'nl';
+const T = {
+nl:{
+  appTitle:'Taken',newList:'Nieuwe lijst',emailTaken:'Email → Taken',jiraTaken:'Jira → Taken',exportWeek:'Weekoverzicht exporteren',
+  today:'Vandaag',allTasks:'Alle taken',highPrio:'Hoge prioriteit',allOpen:'Alle open taken',done:'Afgerond',waitingOn:'Wacht op',overview:'Overzicht',
+  addTask:'Taak toevoegen',noPrio:'Geen prio',high:'Hoog',medium:'Medium',low:'Laag',none:'Geen',
+  cancel:'Annuleren',save:'Opslaan',create:'Aanmaken',del:'Verwijderen',close:'Sluiten',
+  editList:'Lijst bewerken',newListTitle:'Nieuwe lijst',sublistOf:'Sublijst van',addSublist:'Sublijst toevoegen',
+  nameLabel:'Naam',colorLabel:'Kleur',
+  deleteListTitle:'Lijst verwijderen?',deleteListMsg:'Alle taken in deze lijst worden ook verwijderd.',
+  deleteListMsgSub:'Deze lijst en al zijn sublijsten (inclusief taken) worden verwijderd.',
+  editTaskTitle:'Taak bewerken',descLabel:'Omschrijving',priorityLabel:'Prioriteit',deadlineLabel:'Deadline',
+  recurrenceLabel:'Herhaling',waitingLabel:'Wacht op',notesLabel:'Notities',ibpLabel:'IBP',
+  noRec:'Geen',daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks',
+  waitingPH:'Naam persoon of team...',notesPH:'Extra context, links, aantekeningen...',taskPH:'Taaknaam...',waitingShort:'Wacht op...',
+  listCreated:'Lijst aangemaakt',listUpdated:'Lijst bijgewerkt',listDeleted:'Lijst verwijderd',taskDeleted:'Taak verwijderd',
+  recurringCreated:'Herhaaltaak aangemaakt',excelDL:'Excel gedownload',pdfOpened:'PDF-rapport geopend',
+  fAll:'Alles',fOpen:'Open',fDone:'Afgerond',fHighPrio:'Hoge prio',fWaiting:'Wacht op',
+  searchPH:'Zoeken...',searchAllPH:'Zoeken in alle taken...',
+  noTasks:'Geen taken gevonden',makeList:'Maak een lijst aan om te beginnen',
+  openSec:'Open',ibpImpact:'⚡ Impact',ibpBlocker:'🔴 Blocker',ibpPriority:'🔺 Priority',
+  addToday:'Voeg toe aan Vandaag',removeToday:'Verwijder uit Vandaag',
+  releaseNotes:'Release notes',current:'Huidig',
+  totalLabel:'Totaal',doneLabel:'Afgerond',openLabel:'Open',blockersLabel:'Blockers',
+  excelTitle:'Excel (.xlsx)',excelDesc:'Overzicht per lijst met prioriteit, IBP, status en deadline',
+  pdfTitle:'PDF rapport',pdfDesc:'Printklaar weekoverzicht met statistieken',
+  jiraTitle:'Jira → Taken via Claude',jiraWhat:'Wat Claude doet:',
+  jiraS1:'Jira-issues ophalen (Atlassian MCP)',jiraS2:'Taken aanmaken in Supabase (lijst: Jira)',jiraS3:'Bestaande taken worden overgeslagen',
+  jiraRefresh:'↻ Verversen',jiraOpenBtn:'Openen in Claude ↗',
+  jiraDesc:'Claude haalt via de Atlassian MCP je issues op en voegt ze direct in Supabase in.',
+  emailTitle:'Email → Taken',emailDesc:'Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren.',
+  emailOpenBtn:'Openen in Claude ↗',
+  nav:'navigeren',enterOp:'openen',escCl:'sluiten',
+  weekTitle:'Weekoverzicht Taken',genOn:'Gegenereerd op',
+  statTotal:'Totaal taken',statDone:'Afgerond',statOpen:'Open',statHighPrio:'Hoge prio open',
+  exportTitle:'Weekoverzicht exporteren',
+},
+en:{
+  appTitle:'Tasks',newList:'New list',emailTaken:'Email → Tasks',jiraTaken:'Jira → Tasks',exportWeek:'Export week overview',
+  today:'Today',allTasks:'All tasks',highPrio:'High priority',allOpen:'All open tasks',done:'Completed',waitingOn:'Waiting for',overview:'Overview',
+  addTask:'Add task',noPrio:'No priority',high:'High',medium:'Medium',low:'Low',none:'None',
+  cancel:'Cancel',save:'Save',create:'Create',del:'Delete',close:'Close',
+  editList:'Edit list',newListTitle:'New list',sublistOf:'Sublist of',addSublist:'Add sublist',
+  nameLabel:'Name',colorLabel:'Color',
+  deleteListTitle:'Delete list?',deleteListMsg:'All tasks in this list will also be deleted.',
+  deleteListMsgSub:'This list and all its sublists (including tasks) will be deleted.',
+  editTaskTitle:'Edit task',descLabel:'Description',priorityLabel:'Priority',deadlineLabel:'Deadline',
+  recurrenceLabel:'Recurrence',waitingLabel:'Waiting for',notesLabel:'Notes',ibpLabel:'IBP',
+  noRec:'None',daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly',
+  waitingPH:'Person or team name...',notesPH:'Extra context, links, notes...',taskPH:'Task name...',waitingShort:'Waiting for...',
+  listCreated:'List created',listUpdated:'List updated',listDeleted:'List deleted',taskDeleted:'Task deleted',
+  recurringCreated:'Recurring task created',excelDL:'Excel downloaded',pdfOpened:'PDF report opened',
+  fAll:'All',fOpen:'Open',fDone:'Completed',fHighPrio:'High prio',fWaiting:'Waiting for',
+  searchPH:'Search...',searchAllPH:'Search all tasks...',
+  noTasks:'No tasks found',makeList:'Create a list to get started',
+  openSec:'Open',ibpImpact:'⚡ Impact',ibpBlocker:'🔴 Blocker',ibpPriority:'🔺 Priority',
+  addToday:'Add to Today',removeToday:'Remove from Today',
+  releaseNotes:'Release notes',current:'Current',
+  totalLabel:'Total',doneLabel:'Completed',openLabel:'Open',blockersLabel:'Blockers',
+  excelTitle:'Excel (.xlsx)',excelDesc:'Overview per list with priority, IBP, status and deadline',
+  pdfTitle:'PDF report',pdfDesc:'Print-ready week overview with statistics',
+  jiraTitle:'Jira → Tasks via Claude',jiraWhat:'What Claude does:',
+  jiraS1:'Fetch Jira issues (Atlassian MCP)',jiraS2:'Create tasks in Supabase (list: Jira)',jiraS3:'Existing tasks are skipped',
+  jiraRefresh:'↻ Refresh',jiraOpenBtn:'Open in Claude ↗',
+  jiraDesc:'Claude fetches your issues via the Atlassian MCP and inserts them directly into Supabase.',
+  emailTitle:'Email → Tasks',emailDesc:"Click the button below to ask Claude to analyse today's emails and create tasks.",
+  emailOpenBtn:'Open in Claude ↗',
+  nav:'navigate',enterOp:'open',escCl:'close',
+  weekTitle:'Tasks Week Overview',genOn:'Generated on',
+  statTotal:'Total tasks',statDone:'Completed',statOpen:'Open',statHighPrio:'High prio open',
+  exportTitle:'Export week overview',
+}};
+function tr(k){ return (T[lang]&&T[lang][k]) || T.nl[k] || k; }
+function toggleLang(){
+  lang = lang==='nl'?'en':'nl';
+  localStorage.setItem('lang',lang);
+  applyLang(); render();
+}
+function applyLang(){
+  const b=document.getElementById('lang-switch');
+  if(b) b.textContent=lang.toUpperCase();
+}
+
 
 // Supabase
 function setSyncing(v){const d=document.getElementById('sync-dot');if(d)d.className='sync-dot'+(v?' syncing':'');}
@@ -456,13 +545,13 @@ async function loadAll(){
   if(lists)state.lists=lists;
   if(tasks)state.tasks=tasks;
   if(!state.activeListId&&state.lists.length)state.activeListId=state.lists.find(l=>!l.parent_id)?.id||state.lists[0].id;
-  state.loading=false;render();
+  state.loading=false;render();applyLang();
 }
 
 async function createList(name,color,parentId=null){
   const pos=state.lists.filter(l=>l.parent_id===parentId).length;
   const res=await sb('lists',{method:'POST',body:{name,color,position:pos,parent_id:parentId}});
-  if(res&&res[0]){state.lists.push(res[0]);if(parentId)state.expanded[parentId]=true;state.activeListId=res[0].id;render();showToast('Lijst aangemaakt');}
+  if(res&&res[0]){state.lists.push(res[0]);if(parentId)state.expanded[parentId]=true;state.activeListId=res[0].id;render();showToast(tr('listCreated'));}
 }
 async function updateListName(id,name){
   await sb('lists?id=eq.'+id,{method:'PATCH',body:{name},prefer:'return=minimal'});
@@ -471,7 +560,7 @@ async function updateListName(id,name){
 async function updateList(id,name,color){
   await sb('lists?id=eq.'+id,{method:'PATCH',body:{name,color},prefer:'return=minimal'});
   const l=state.lists.find(l=>l.id===id);if(l){l.name=name;l.color=color;}
-  render();showToast('Lijst bijgewerkt');
+  render();showToast(tr('listUpdated'));
 }
 async function removeList(id){
   const toDelete=[id];
@@ -481,7 +570,7 @@ async function removeList(id){
   state.lists=state.lists.filter(l=>!toDelete.includes(l.id));
   state.tasks=state.tasks.filter(t=>!toDelete.includes(t.list_id));
   state.activeListId=state.lists.find(l=>!l.parent_id)?.id||state.lists[0]?.id||null;
-  render();showToast('Lijst verwijderd');
+  render();showToast(tr('listDeleted'));
 }
 async function updatePositions(lists){
   for(let i=0;i<lists.length;i++){
@@ -504,7 +593,7 @@ async function removeTask(id){
   todayTasks.delete(id);saveTodayTasks();
   render();
   await sb('tasks?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
-  showToast('Taak verwijderd');
+  showToast(tr('taskDeleted'));
 }
 function toggleTaskExpand(id,e){
   e.stopPropagation();
@@ -681,9 +770,9 @@ function closeSidebar(){
 function renderTopbar(){
   const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
-    const labels={'today':'Vandaag','all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond','waiting':'Wacht op'};
+    const labels={'today':tr('today'),'all':tr('allTasks'),'high':tr('highPrio'),'open':tr('allOpen'),'done':tr('done'),'waiting':tr('waitingOn')};
     document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
-    document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>
+    document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/>
     <button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
     return;
   }
@@ -698,8 +787,8 @@ function renderTopbar(){
   }else{
     header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
   }
-  const filters=[['all','Alles'],['open','Open'],['done','Afgerond'],['high','Hoge prio'],['waiting','Wacht op']];
-  document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/><button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
+  const filters=[['all',tr('fAll')],['open',tr('fOpen')],['done',tr('fDone')],['high',tr('fHighPrio')],['waiting',tr('fWaiting')]];
+  document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/><button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
 }
 function isDueToday(d){if(!d)return false;const due=new Date(d);const now=new Date();return due.getFullYear()===now.getFullYear()&&due.getMonth()===now.getMonth()&&due.getDate()===now.getDate();}
 function getFiltered(){
@@ -746,7 +835,7 @@ function taskHTML(t,showList=false){
   const recLabels={daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks'};
   const recBadge=t.recurrence&&recLabels[t.recurrence]?`<span class="recurrence-badge"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6a4 4 0 0 1 4-4 4 4 0 0 1 3 1.3"/><polyline points="9,1 9,4 6,4"/><path d="M10 6a4 4 0 0 1-4 4 4 4 0 0 1-3-1.3"/><polyline points="3,11 3,8 6,8"/></svg>${recLabels[t.recurrence]}</span>`:'';
 
-  const ibpLabels={impact:'⚡ Impact',blocker:'🔴 Blocker',priority:'🔺 Priority'};
+  const ibpLabels={impact:tr('ibpImpact'),blocker:tr('ibpBlocker'),priority:tr('ibpPriority')};
   const ibpCls={impact:'ibp-impact',blocker:'ibp-blocker',priority:'ibp-priority'};
   const ibpBadge=t.ibp&&t.ibp!=='none'&&ibpLabels[t.ibp]?`<span class="ibp-badge ${ibpCls[t.ibp]||''}">${ibpLabels[t.ibp]}</span>`:'';
   const jiraBadge=t.jira_key?`<span class="jira-badge"><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="10" rx="2"/><path d="M3.5 6l2 2 3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(t.jira_key)}</span>`:''
@@ -755,7 +844,7 @@ function taskHTML(t,showList=false){
   const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
   const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
   const isToday=todayTasks.has(String(t.id));
-  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
+  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?tr('removeToday'):tr('addToday')}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
     <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
     <div class="task-body">
@@ -779,17 +868,17 @@ function inlineAddHTML(){
     const prios=['none','high','medium','low'];
     const cur=state.inlineAddPrio||'none';
     const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
-    const pillLabel={none:'Geen prio',high:'Hoog',medium:'Medium',low:'Laag'};
+    const pillLabel={none:tr('noPrio'),high:tr('high'),medium:tr('medium'),low:tr('low')};
     return `<div class="inline-add-form" id="inline-add-form">
-      <input class="inline-add-input" id="inline-task-text" placeholder="Taaknaam..." onkeydown="if(event.key==='Enter')submitInlineTask();if(event.key==='Escape')closeInlineAdd()"/>
+      <input class="inline-add-input" id="inline-task-text" placeholder="${tr('taskPH')}" onkeydown="if(event.key==='Enter')submitInlineTask();if(event.key==='Escape')closeInlineAdd()"/>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input type="date" id="inline-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="Deadline"/>
-        <input id="inline-task-waiting" placeholder="Wacht op..." style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;" title="Wacht op persoon"/>
+        <input id="inline-task-waiting" placeholder="${tr('waitingShort')}" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;" title="Wacht op persoon"/>
         <select id="inline-task-ibp" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="IBP">
-          <option value="none">IBP...</option>
-          <option value="impact">⚡ Impact</option>
-          <option value="blocker">🔴 Blocker</option>
-          <option value="priority">🔺 Priority</option>
+          <option value="none">${tr('ibpLabel')}...</option>
+          <option value="impact">${tr('ibpImpact')}</option>
+          <option value="blocker">${tr('ibpBlocker')}</option>
+          <option value="priority">${tr('ibpPriority')}</option>
         </select>
       </div>
       <div class="inline-add-footer">
@@ -803,7 +892,7 @@ function inlineAddHTML(){
   }
   return `<div class="inline-add-trigger" onclick="openInlineAdd()">
     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
-    Taak toevoegen
+    ${tr('addTask')}
   </div>`;
 }
 
@@ -811,7 +900,7 @@ function renderTasks(){
   const area=document.getElementById('task-area');
   if(state.loading){area.innerHTML='<div class="empty-state"><div class="spinner"></div></div>';return;}
   const isGlobal=!!state.globalView;
-  if(!isGlobal&&!state.activeListId){area.innerHTML='<div class="empty-state"><span>Maak een lijst aan om te beginnen</span></div>';return;}
+  if(!isGlobal&&!state.activeListId){area.innerHTML=`<div class="empty-state"><span>${tr('makeList')}</span></div>`;return;}
 
   // Bewaar invoerveld waarden als form al open is
   let savedText='', savedDue='', savedWaiting='', savedIbp='none';
@@ -845,8 +934,8 @@ function renderTasks(){
   }
   const open=f.filter(t=>!t.done).sort((a,b)=>PO[a.priority]-PO[b.priority]);
   const done=f.filter(t=>t.done);
-  if(open.length)h+=`<div class="section-header">Open <span style="font-weight:400">${open.length}</span></div>`+open.map(t=>taskHTML(t,isGlobal)).join('');
-  if(done.length)h+=`<div class="section-header">Afgerond <span style="font-weight:400">${done.length}</span></div>`+done.map(t=>taskHTML(t,isGlobal)).join('');
+  if(open.length)h+=`<div class="section-header">${tr('openSec')} <span style="font-weight:400">${open.length}</span></div>`+open.map(t=>taskHTML(t,isGlobal)).join('');
+  if(done.length)h+=`<div class="section-header">${tr('done')} <span style="font-weight:400">${done.length}</span></div>`+done.map(t=>taskHTML(t,isGlobal)).join('');
   area.innerHTML=h;
   if(state.inlineAddOpen){
     const inp=document.getElementById('inline-task-text');
@@ -865,7 +954,32 @@ function renderTasks(){
   }
 }
 
-function render(){renderSidebar();renderTopbar();renderTasks();}
+function updateStaticLabels(){
+  // Sidebar buttons
+  const nb=document.querySelector('.add-list-btn:nth-child(1)');
+  document.querySelectorAll('.add-list-btn').forEach(b=>{
+    const t=b.textContent.trim();
+    if(t.includes('Nieuwe lijst')||t.includes('New list'))b.innerHTML=b.innerHTML.replace(/Nieuwe lijst|New list/,tr('newList'));
+    if(t.includes('Email'))b.innerHTML=b.innerHTML.replace(/Email → Taken|Email → Tasks/,tr('emailTaken'));
+    if(t.includes('Jira'))b.innerHTML=b.innerHTML.replace(/Jira → Taken|Jira → Tasks/,tr('jiraTaken'));
+    if(t.includes('Weekoverzicht')||t.includes('Export week'))b.innerHTML=b.innerHTML.replace(/Weekoverzicht exporteren|Export week overview/,tr('exportWeek'));
+  });
+  // Overview label
+  const ov=document.querySelector('.list-divider');
+  if(ov)ov.textContent=tr('overview');
+  // Global filter buttons
+  const gmap={today:'today',all:'allTasks',high:'highPrio',open:'allOpen',done:'done',waiting:'waitingOn'};
+  Object.entries(gmap).forEach(([k,tk])=>{
+    const btn=document.getElementById('global-'+k+'-btn');
+    if(!btn)return;
+    // Replace text node (first child after icon)
+    btn.childNodes.forEach(n=>{if(n.nodeType===3&&n.textContent.trim())n.textContent=' '+tr(tk)+' ';});
+  });
+  // App title
+  const at=document.querySelector('.app-title');
+  if(at)at.textContent=tr('appTitle');
+}
+function render(){renderSidebar();renderTopbar();renderTasks();applyLang();updateStaticLabels();}
 
 function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
 function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
@@ -916,18 +1030,18 @@ async function addTask(){
 function confirmDeleteList(id,e){
   if(e)e.stopPropagation();
   const hasChildren=state.lists.some(l=>l.parent_id===id);
-  const msg=hasChildren?'Deze lijst en al zijn sublijsten (inclusief taken) worden verwijderd.':'Alle taken in deze lijst worden ook verwijderd.';
-  openConfirmModal('Lijst verwijderen?',msg,()=>removeList(id));
+  const msg=hasChildren?tr('deleteListMsgSub'):tr('deleteListMsg');
+  openConfirmModal(tr('deleteListTitle'),msg,()=>removeList(id));
 }
 function openEditListModal(id,e){
   if(e)e.stopPropagation();
   const list=state.lists.find(l=>l.id===id);if(!list)return;
   const opts=COLORS.map(c=>`<span class="color-dot" style="background:${c}${c===list.color?';border-color:#888':''}" onclick="selectColor('${c}',this)" data-color="${c}"></span>`).join('');
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">
-    <h3>Lijst bewerken</h3>
-    <div><label>Naam</label><input id="modal-edit-list-name" value="${esc(list.name)}"/></div>
-    <div><label>Kleur</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${opts}</div></div>
-    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary" onclick="submitEditList('${id}')">Opslaan</button></div>
+    <h3>${tr('editList')}</h3>
+    <div><label>${tr('nameLabel')}</label><input id="modal-edit-list-name" value="${esc(list.name)}"/></div>
+    <div><label>${tr('colorLabel')}</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${opts}</div></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary" onclick="submitEditList('${id}')">${tr('save')}</button></div>
   </div></div>`;
   document.getElementById('modal-edit-list-name').focus();
   selectedColor=list.color;
@@ -946,10 +1060,10 @@ function selectColor(c,el){
 function openNewListModal(parentId,e){
   if(e)e.stopPropagation();
   const parent=parentId?state.lists.find(l=>l.id===parentId):null;
-  const title=parent?`Sublijst van "${parent.name}"`:'Nieuwe lijst';
+  const title=parent?`${tr('sublistOf')} "${parent.name}"`:`${tr('newListTitle')}`;
   const defaultColor=parent?parent.color:COLORS[0];
   const opts=COLORS.map(c=>`<span class="color-dot" style="background:${c}" onclick="selectColor('${c}',this)" data-color="${c}"></span>`).join('');
-  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>${esc(title)}</h3><div><label>Naam</label><input id="modal-list-name" placeholder="Lijstnaam..."/></div><div><label>Kleur</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${opts}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary" id="modal-create-btn" onclick="submitNewList('${parentId||''}')">Aanmaken</button></div></div></div>`;
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>${esc(title)}</h3><div><label>Naam</label><input id="modal-list-name" placeholder="Lijstnaam..."/></div><div><label>${tr('colorLabel')}</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${opts}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary" id="modal-create-btn" onclick="submitNewList('${parentId||''}')"> ${tr('create')}</button></div></div></div>`;
   document.getElementById('modal-list-name').focus();
   selectedColor=defaultColor;
   selectColor(defaultColor,document.querySelector('[data-color="'+defaultColor+'"]'));
@@ -963,16 +1077,16 @@ async function submitNewList(parentId){
 function editTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal modal-wide">
-    <h3>Taak bewerken</h3>
-    <div><label>Omschrijving</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
+    <h3>${tr('editTaskTitle')}</h3>
+    <div><label>${tr('descLabel')}</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
     <div class="modal-row-2">
-      <div><label>Prioriteit</label><select id="modal-task-prio2">
-        <option value="none" ${t.priority==='none'||!t.priority?'selected':''}>Geen</option>
-        <option value="high" ${t.priority==='high'?'selected':''}>Hoog</option>
-        <option value="medium" ${t.priority==='medium'?'selected':''}>Medium</option>
-        <option value="low" ${t.priority==='low'?'selected':''}>Laag</option>
+      <div><label>${tr('priorityLabel')}</label><select id="modal-task-prio2">
+        <option value="none" ${t.priority==='none'||!t.priority?'selected':''}>${tr('none')}</option>
+        <option value="high" ${t.priority==='high'?'selected':''}>${tr('high')}</option>
+        <option value="medium" ${t.priority==='medium'?'selected':''}>${tr('medium')}</option>
+        <option value="low" ${t.priority==='low'?'selected':''}>${tr('low')}</option>
       </select></div>
-      <div><label>IBP</label><select id="modal-task-ibp">
+      <div><label>${tr('ibpLabel')}</label><select id="modal-task-ibp">
         <option value="none" ${!t.ibp||t.ibp==='none'?'selected':''}>Geen</option>
         <option value="impact" ${t.ibp==='impact'?'selected':''}>⚡ Impact</option>
         <option value="blocker" ${t.ibp==='blocker'?'selected':''}>🔴 Blocker</option>
@@ -980,20 +1094,20 @@ function editTask(id){
       </select></div>
     </div>
     <div class="modal-row-2">
-      <div><label>Deadline</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
-      <div><label>Herhaling</label><select id="modal-task-recurrence">
-        <option value="" ${!t.recurrence?'selected':''}>Geen</option>
-        <option value="daily" ${t.recurrence==='daily'?'selected':''}>Dagelijks</option>
-        <option value="weekly" ${t.recurrence==='weekly'?'selected':''}>Wekelijks</option>
-        <option value="monthly" ${t.recurrence==='monthly'?'selected':''}>Maandelijks</option>
-        <option value="yearly" ${t.recurrence==='yearly'?'selected':''}>Jaarlijks</option>
+      <div><label>${tr('deadlineLabel')}</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
+      <div><label>${tr('recurrenceLabel')}</label><select id="modal-task-recurrence">
+        <option value="" ${!t.recurrence?'selected':''}>${tr('noRec')}</option>
+        <option value="daily" ${t.recurrence==='daily'?'selected':''}>${tr('daily')}</option>
+        <option value="weekly" ${t.recurrence==='weekly'?'selected':''}>${tr('weekly')}</option>
+        <option value="monthly" ${t.recurrence==='monthly'?'selected':''}>${tr('monthly')}</option>
+        <option value="yearly" ${t.recurrence==='yearly'?'selected':''}>${tr('yearly')}</option>
       </select></div>
     </div>
-    <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
-    <div><label>Notities</label><textarea id="modal-task-notes" rows="3" placeholder="Extra context, links, aantekeningen...">${esc(t.notes||'')}</textarea></div>
+    <div><label>${tr('waitingLabel')}</label><input id="modal-task-waiting" placeholder="${tr('waitingPH')}" value="${esc(t.waiting_for||'')}"/></div>
+    <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="3" placeholder="${tr('notesPH')}">${esc(t.notes||'')}</textarea></div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary" onclick="submitEditTask('${id}')">Opslaan</button>
+      <button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button>
+      <button class="btn-primary" onclick="submitEditTask('${id}')">${tr('save')}</button>
     </div>
   </div></div>`;
 }
@@ -1035,7 +1149,7 @@ async function toggleTask(id){
     if(newDue)body.due_date=newDue;
     const res=await sb('tasks',{method:'POST',body});
     if(res&&res[0])state.tasks.push(res[0]);
-    showToast(`Herhaaltaak aangemaakt${newDue?' voor '+new Date(newDue).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):''}`)
+    showToast(`${tr('recurringCreated')}${newDue?' voor '+new Date(newDue).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):''}`)
   }
   // Remove from today if done
   if(t.done){todayTasks.delete(String(id));saveTodayTasks();}
@@ -1043,7 +1157,7 @@ async function toggleTask(id){
   await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
 }
 function openConfirmModal(title,msg,onConfirm){
-  document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary btn-danger" onclick="confirmAction()">Verwijderen</button></div></div></div>`;
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary btn-danger" onclick="confirmAction()">${tr('del')}</button></div></div></div>`;
   window._confirmAction=onConfirm;
 }
 function openReleaseNotes(){
@@ -1051,6 +1165,8 @@ function openReleaseNotes(){
     {
       version:'4.1.0', date:'2026-04-17', latest:true,
       notes:[
+        'Tweetalige interface: Nederlands/Engels met taalswitch in de sidebar',
+        'Taalkeuze wordt onthouden in de browser',
         'Vandaag-filter toont nu ook taken met deadline = vandaag (automatisch)',
         'Nieuw Impact-veld per taak: Blocker / Hoog / Medium / Laag',
         'Impact badge zichtbaar op elke taak in de lijst',
@@ -1157,9 +1273,9 @@ function openReleaseNotes(){
     ${i<releases.length-1?'<hr style="border:none;border-top:0.5px solid var(--border-light)">':''}
   `).join('');
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="width:360px">
-    <h3>Release notes</h3>
+    <h3>${tr('releaseNotes')}</h3>
     <div class="release-notes">${html}</div>
-    <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">Sluiten</button></div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">${tr('close')}</button></div>
   </div></div>`;
 }
 function closeModal(){document.getElementById('modal-container').innerHTML='';}
@@ -1190,7 +1306,7 @@ function openJiraModal() {
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary" onclick="closeModal();loadAll();showToast('Ververs na afloop in Claude')" style="background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border-mid)">
+      <button class="btn-primary" onclick="closeModal();loadAll();showToast(tr('jiraRefresh'))" style="background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border-mid)">
         ↻ Verversen
       </button>
       <button class="btn-primary btn-jira" onclick="window.open('https://claude.ai/new?q='+encodeURIComponent(document.getElementById('jira-prompt-hidden').value),'_blank');closeModal()">
@@ -1357,7 +1473,7 @@ function exportToExcel() {
   }
   XLSX.writeFile(wb, `Taken_week_${start.toISOString().split('T')[0]}.xlsx`);
   closeModal();
-  showToast('Excel gedownload');
+  showToast(tr('excelDL'));
 }
 
 function exportToPDF() {
@@ -1408,7 +1524,7 @@ function exportToPDF() {
     a.click();
   }
   closeModal();
-  showToast('PDF-rapport geopend');
+  showToast(tr('pdfOpened'));
 }
 
 setInterval(async()=>{

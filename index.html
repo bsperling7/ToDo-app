@@ -232,6 +232,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .toast.show{opacity:1;}
 .version-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;border-top:0.5px solid var(--border-light);margin-top:auto;}
 .version-label{font-size:10px;color:var(--text-tertiary);letter-spacing:.04em;}
+.info-btn{width:18px;height:18px;border-radius:50%;border:0.5px solid var(--border-mid);background:none;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--font);line-height:1;}
+.info-btn:hover{background:var(--bg-primary);color:var(--text-secondary);}
 .release-badge.latest{background:#EAF3DE;color:#3B6D11;}
 .release-items li{font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5;}
 .release-items li::before{content:'·';color:var(--text-tertiary);flex-shrink:0;}
@@ -363,7 +365,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.0.0-beta</span>
+      <span class="version-label">v1.1</span>
+      <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
   <div id="wrapper">
@@ -1181,7 +1184,23 @@ function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary btn-danger" onclick="confirmAction()">${tr('del')}</button></div></div></div>`;
   window._confirmAction=onConfirm;
 }
-function openReleaseNotes(){}
+function openReleaseNotes(){
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="width:360px">
+    <h3>${tr('releaseNotes')}</h3>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">
+      <div style="font-size:13px;font-weight:500;color:var(--text-primary);display:flex;align-items:center;gap:8px">
+        v1.1 <span style="font-size:10px;font-weight:500;background:#EAF3DE;color:#3B6D11;padding:1px 7px;border-radius:10px;border:0.5px solid #c3e0a0">${tr('current')}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary)">2026-04-17</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:4px">
+        ${['Vandaag, Week, Alle taken, Hoge prio, Open, Afgerond, Wacht op filters','Terugkerende taken (dagelijks/wekelijks/maandelijks/jaarlijks)','Jira → Taken via Atlassian MCP','Email → Taken via Claude','Weekoverzicht exporteren naar Excel en PDF','IBP-veld per taak (Impact / Blocker / Priority)','Tweetalig: Nederlands / Engels','Donker en licht thema','PWA: installeerbaar als app op telefoon'].map(n=>`<li style="font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5"><span style="color:var(--text-tertiary);flex-shrink:0">·</span>${n}</li>`).join('')}
+      </ul>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+      <button class="btn-primary" onclick="closeModal()">${tr('close')}</button>
+    </div>
+  </div></div>`;
+}
         ${r.latest?'<span class="release-badge latest">Huidig</span>':''}
       </div>
       <div class="release-date">${r.date}</div>

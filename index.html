@@ -345,6 +345,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         Wacht op
         <span class="count" id="global-waiting-count"></span>
       </button>
+      <button class="global-item" id="global-week-btn" onclick="setGlobalView('week')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="10" y1="1" x2="10" y2="3"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="4" y1="8" x2="10" y2="8"/></svg>
+        Deze week
+        <span class="count" id="global-week-count"></span>
+      </button>
     </div>
     <div class="sidebar-bottom">
       <button class="add-list-btn" onclick="openNewListModal(null)">
@@ -365,7 +370,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v4.3.0</span>
+      <span class="version-label">v4.4.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -475,7 +480,7 @@ nl:{
   nav:'navigeren',enterOp:'openen',escCl:'sluiten',
   weekTitle:'Weekoverzicht Taken',genOn:'Gegenereerd op',
   statTotal:'Totaal taken',statDone:'Afgerond',statOpen:'Open',statHighPrio:'Hoge prio open',
-  exportTitle:'Weekoverzicht exporteren',
+  exportTitle:'Weekoverzicht exporteren',thisWeek:'Deze week',
 },
 en:{
   appTitle:'Tasks',newList:'New list',emailTaken:'Email → Tasks',jiraTaken:'Jira → Tasks',exportWeek:'Export week overview',
@@ -510,7 +515,7 @@ en:{
   nav:'navigate',enterOp:'open',escCl:'close',
   weekTitle:'Tasks Week Overview',genOn:'Generated on',
   statTotal:'Total tasks',statDone:'Completed',statOpen:'Open',statHighPrio:'High prio open',
-  exportTitle:'Export week overview',
+  exportTitle:'Export week overview',thisWeek:'This week',
 }};
 function tr(k){ return (T[lang]&&T[lang][k]) || T.nl[k] || k; }
 function toggleLang(){
@@ -742,14 +747,19 @@ function renderSidebar(){
   const waiting=state.tasks.filter(t=>t.waiting_for&&!t.done).length;
   const todaySet=new Set([...todayTasks].map(String));
   const today=state.tasks.filter(t=>!t.done&&(todaySet.has(String(t.id))||isDueToday(t.due_date))).length;
+  const weekRange=getCurrentWeekRange();
+  const weekCount=state.tasks.filter(t=>!t.done&&t.due_date&&isInWeek(t.due_date,weekRange)).length;
   document.getElementById('global-today-count').textContent=today||'';
   document.getElementById('global-all-count').textContent=all||'';
   document.getElementById('global-high-count').textContent=high||'';
   document.getElementById('global-open-count').textContent=open||'';
   document.getElementById('global-done-count').textContent=done||'';
   document.getElementById('global-waiting-count').textContent=waiting||'';
-  ['today','all','high','open','done','waiting'].forEach(v=>{
-    document.getElementById('global-'+v+'-btn').classList.toggle('active',state.globalView===v);
+  const weekEl=document.getElementById('global-week-count');
+  if(weekEl)weekEl.textContent=weekCount||'';
+  ['today','all','high','open','done','waiting','week'].forEach(v=>{
+    const el=document.getElementById('global-'+v+'-btn');
+    if(el)el.classList.toggle('active',state.globalView===v);
   });
 }
 function toggleExpand(id,e){e.stopPropagation();state.expanded[id]=state.expanded[id]===false;renderSidebar();}
@@ -770,7 +780,7 @@ function closeSidebar(){
 function renderTopbar(){
   const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
-    const labels={'today':tr('today'),'all':tr('allTasks'),'high':tr('highPrio'),'open':tr('allOpen'),'done':tr('done'),'waiting':tr('waitingOn')};
+    const labels={'today':tr('today'),'all':tr('allTasks'),'high':tr('highPrio'),'open':tr('allOpen'),'done':tr('done'),'waiting':tr('waitingOn'),'week':tr('thisWeek')};
     document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/>
     <button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
@@ -791,6 +801,21 @@ function renderTopbar(){
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/><button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
 }
 function isDueToday(d){if(!d)return false;const due=new Date(d);const now=new Date();return due.getFullYear()===now.getFullYear()&&due.getMonth()===now.getMonth()&&due.getDate()===now.getDate();}
+function getCurrentWeekRange(){
+  const now=new Date();now.setHours(0,0,0,0);
+  const day=now.getDay(); // 0=sun,1=mon,...,5=fri,6=sat
+  const mon=new Date(now);mon.setDate(now.getDate()-(day===0?6:day-1));
+  const fri=new Date(mon);fri.setDate(mon.getDate()+4);fri.setHours(23,59,59,999);
+  // Start from today (not Monday) so past days are excluded
+  const start=now>mon?now:mon;
+  return {start,end:fri};
+}
+function isInWeek(d,range){
+  if(!d)return false;
+  const due=new Date(d);due.setHours(0,0,0,0);
+  const s=new Date(range.start);s.setHours(0,0,0,0);
+  return due>=s&&due<=range.end;
+}
 function getFiltered(){
   let t;
   if(state.globalView){
@@ -802,6 +827,10 @@ function getFiltered(){
     else if(state.globalView==='waiting'){
       t=t.filter(t=>t.waiting_for&&!t.done);
       if(state.waitingFilter)t=t.filter(t=>t.waiting_for===state.waitingFilter);
+    }
+    else if(state.globalView==='week'){
+      const wr=getCurrentWeekRange();
+      t=t.filter(t=>!t.done&&t.due_date&&isInWeek(t.due_date,wr));
     }
   }else{
     t=state.tasks.filter(t=>t.list_id===state.activeListId);
@@ -968,7 +997,7 @@ function updateStaticLabels(){
   const ov=document.querySelector('.list-divider');
   if(ov)ov.textContent=tr('overview');
   // Global filter buttons
-  const gmap={today:'today',all:'allTasks',high:'highPrio',open:'allOpen',done:'done',waiting:'waitingOn'};
+  const gmap={today:'today',all:'allTasks',high:'highPrio',open:'allOpen',done:'done',waiting:'waitingOn',week:'thisWeek'};
   Object.entries(gmap).forEach(([k,tk])=>{
     const btn=document.getElementById('global-'+k+'-btn');
     if(!btn)return;
@@ -1165,6 +1194,7 @@ function openReleaseNotes(){
     {
       version:'4.1.0', date:'2026-04-17', latest:true,
       notes:[
+        'Week-filter: toont alle open taken met een deadline in de huidige werkweek (ma-vr), vanaf vandaag',
         'Tweetalige interface: Nederlands/Engels met taalswitch in de sidebar',
         'Taalkeuze wordt onthouden in de browser',
         'Vandaag-filter toont nu ook taken met deadline = vandaag (automatisch)',

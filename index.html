@@ -374,13 +374,19 @@ let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',sear
 let todayTasks=new Set(JSON.parse(localStorage.getItem('today_tasks')||'[]'));
 function saveTodayTasks(){localStorage.setItem('today_tasks',JSON.stringify([...todayTasks]));}
 function toggleToday(id,e){
-  e.stopPropagation();
-  if(todayTasks.has(id))todayTasks.delete(id);else todayTasks.add(id);
+  if(e)e.stopPropagation();
+  const sid=String(id);
+  if(todayTasks.has(sid))todayTasks.delete(sid);else todayTasks.add(sid);
   saveTodayTasks();
-  // Just update the button without full re-render
-  const btn=document.getElementById('today-btn-'+id);
-  if(btn){btn.classList.toggle('is-today',todayTasks.has(id));btn.title=todayTasks.has(id)?'Verwijder uit Vandaag':'Voeg toe aan Vandaag';}
   renderSidebar();
+  // Update button in place
+  const btn=document.getElementById('today-btn-'+sid);
+  if(btn){
+    const active=todayTasks.has(sid);
+    btn.classList.toggle('is-today',active);
+    btn.title=active?'Verwijder uit Vandaag':'Voeg toe aan Vandaag';
+    btn.style.opacity=active?'1':'';
+  }
 }
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
@@ -608,7 +614,7 @@ function renderSidebar(){
   const open=state.tasks.filter(t=>!t.done).length;
   const done=state.tasks.filter(t=>t.done).length;
   const waiting=state.tasks.filter(t=>t.waiting_for&&!t.done).length;
-  const today=[...todayTasks].filter(id=>state.tasks.find(t=>t.id===id&&!t.done)).length;
+  const today=[...todayTasks].filter(id=>state.tasks.find(t=>String(t.id)===String(id)&&!t.done)).length;
   document.getElementById('global-today-count').textContent=today||'';
   document.getElementById('global-all-count').textContent=all||'';
   document.getElementById('global-high-count').textContent=high||'';
@@ -660,7 +666,7 @@ function getFiltered(){
   let t;
   if(state.globalView){
     t=state.tasks;
-    if(state.globalView==='today')t=t.filter(t=>todayTasks.has(t.id)&&!t.done);
+    if(state.globalView==='today')t=t.filter(t=>todayTasks.has(String(t.id))&&!t.done);
     else if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
     else if(state.globalView==='open')t=t.filter(t=>!t.done);
     else if(state.globalView==='done')t=t.filter(t=>t.done);
@@ -703,9 +709,8 @@ function taskHTML(t,showList=false){
   const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
   const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
   const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
-  const isToday=todayTasks.has(t.id);
-  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';
-  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
+  const isToday=todayTasks.has(String(t.id));
+  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
     <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
     <div class="task-body">
@@ -971,7 +976,7 @@ async function toggleTask(id){
     showToast(`Herhaaltaak aangemaakt${newDue?' voor '+new Date(newDue).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):''}`)
   }
   // Remove from today if done
-  if(t.done){todayTasks.delete(id);saveTodayTasks();}
+  if(t.done){todayTasks.delete(String(id));saveTodayTasks();}
   render();
   await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
 }

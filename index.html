@@ -132,6 +132,23 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .waiting-pill.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:500;}
 .waiting-pill .pill-count{font-size:10px;background:var(--bg-tertiary);padding:0 5px;border-radius:8px;color:var(--text-tertiary);}
 .waiting-pill.active .pill-count{background:var(--accent);color:#fff;}
+.recurrence-badge{font-size:10px;display:inline-flex;align-items:center;gap:3px;color:var(--text-tertiary);}
+.task-today-toggle{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:color .15s;}
+.task-today-toggle:hover{color:#F59E0B;}
+.task-today-toggle.is-today{color:#F59E0B;}
+.cmd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;}
+.cmd-box{background:var(--bg-primary);border:0.5px solid var(--border-mid);border-radius:var(--radius-lg);width:480px;max-width:calc(100vw - 32px);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.12);}
+.cmd-input-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:0.5px solid var(--border-light);}
+.cmd-input{flex:1;font-size:15px;border:none;background:transparent;color:var(--text-primary);outline:none;font-family:var(--font);}
+.cmd-results{max-height:320px;overflow-y:auto;}
+.cmd-result{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text-primary);border-bottom:0.5px solid var(--border-light);}
+.cmd-result:last-child{border-bottom:none;}
+.cmd-result:hover,.cmd-result.selected{background:var(--accent-soft);}
+.cmd-result.done-item .cmd-result-text{text-decoration:line-through;color:var(--text-tertiary);}
+.cmd-result-list{font-size:10px;color:var(--text-tertiary);margin-left:auto;flex-shrink:0;}
+.cmd-empty{padding:20px 16px;text-align:center;font-size:13px;color:var(--text-tertiary);}
+.cmd-hint{padding:8px 16px;font-size:11px;color:var(--text-tertiary);border-top:0.5px solid var(--border-light);display:flex;gap:12px;}
+.cmd-hint kbd{background:var(--bg-tertiary);border-radius:4px;padding:1px 5px;font-size:10px;}
 #topbar{padding:16px 20px 12px;border-bottom:0.5px solid var(--border-light);display:flex;flex-direction:column;gap:10px;}
 .list-header{display:flex;align-items:center;gap:10px;}
 .breadcrumb{font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:3px;margin-bottom:3px;}
@@ -269,6 +286,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
     <div id="list-nav"></div>
     <div class="global-filters">
       <div class="list-divider">Overzicht</div>
+      <button class="global-item" id="global-today-btn" onclick="setGlobalView('today')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="10" y1="1" x2="10" y2="3"/><line x1="1" y1="5" x2="13" y2="5"/><circle cx="7" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Vandaag
+        <span class="count" id="global-today-count"></span>
+      </button>
       <button class="global-item" id="global-all-btn" onclick="setGlobalView('all')">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
         Alle taken
@@ -306,7 +328,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v2.5.0</span>
+      <span class="version-label">v3.0.0</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -324,6 +346,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="cmd-overlay" id="cmd-overlay" style="display:none" onclick="if(event.target===this)closeCmd()">
+  <div class="cmd-box">
+    <div class="cmd-input-row">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--text-tertiary)"><circle cx="6.5" cy="6.5" r="4"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
+      <input class="cmd-input" id="cmd-input" placeholder="Zoeken in alle taken..." oninput="renderCmd()" onkeydown="cmdKeyDown(event)"/>
+    </div>
+    <div class="cmd-results" id="cmd-results"></div>
+    <div class="cmd-hint"><span><kbd>↑↓</kbd> navigeren</span><span><kbd>Enter</kbd> openen</span><span><kbd>Esc</kbd> sluiten</span></div>
+  </div>
+</div>
 <script>
 const SUPABASE_URL='https://kgoytwcdyeoxascdtnml.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtnb3l0d2NkeWVveGFzY2R0bm1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ4NjgsImV4cCI6MjA5MDYyMDg2OH0.6qP5tYIGdgplNMlobemx3ytVOWX4Bzv2K--n3iuSY_Q';
@@ -339,6 +371,17 @@ const COLORS=[
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
 let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null};
+let todayTasks=new Set(JSON.parse(localStorage.getItem('today_tasks')||'[]'));
+function saveTodayTasks(){localStorage.setItem('today_tasks',JSON.stringify([...todayTasks]));}
+function toggleToday(id,e){
+  e.stopPropagation();
+  if(todayTasks.has(id))todayTasks.delete(id);else todayTasks.add(id);
+  saveTodayTasks();
+  // Just update the button without full re-render
+  const btn=document.getElementById('today-btn-'+id);
+  if(btn){btn.classList.toggle('is-today',todayTasks.has(id));btn.title=todayTasks.has(id)?'Verwijder uit Vandaag':'Voeg toe aan Vandaag';}
+  renderSidebar();
+}
 let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
@@ -413,13 +456,10 @@ async function createTask(text,priority,dueDate=null,waitingFor=null){
   const res=await sb('tasks',{method:'POST',body});
   if(res&&res[0]){state.tasks.push(res[0]);render();}
 }
-async function toggleTask(id){
-  const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.done=!t.done;render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
-}
 async function removeTask(id){
-  state.tasks=state.tasks.filter(t=>t.id!==id);render();
+  state.tasks=state.tasks.filter(t=>t.id!==id);
+  todayTasks.delete(id);saveTodayTasks();
+  render();
   await sb('tasks?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
   showToast('Taak verwijderd');
 }
@@ -429,12 +469,71 @@ function toggleTaskExpand(id,e){
   const row=document.getElementById('tr-'+id);
   if(row)row.classList.toggle('expanded',!!state.expandedTasks[id]);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null},prefer:'return=minimal'});
 }
+
+// ── Ctrl+K zoeken ────────────────────────────────────────
+let cmdSelectedIdx=0;
+function openCmd(){
+  document.getElementById('cmd-overlay').style.display='flex';
+  const inp=document.getElementById('cmd-input');
+  inp.value='';inp.focus();
+  cmdSelectedIdx=0;
+  renderCmd();
+}
+function closeCmd(){
+  document.getElementById('cmd-overlay').style.display='none';
+}
+function renderCmd(){
+  const q=document.getElementById('cmd-input').value.toLowerCase().trim();
+  const results=document.getElementById('cmd-results');
+  let tasks=state.tasks;
+  if(q)tasks=tasks.filter(t=>t.text.toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)||(t.waiting_for||'').toLowerCase().includes(q));
+  tasks=tasks.slice(0,12);
+  if(!tasks.length){results.innerHTML=`<div class="cmd-empty">${q?'Geen resultaten gevonden':'Begin met typen om te zoeken'}</div>`;return;}
+  results.innerHTML=tasks.map((t,i)=>{
+    const list=state.lists.find(l=>l.id===t.list_id);
+    const tc={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
+    const prio=t.priority&&t.priority!=='none'?`<span class="tag ${tc}" style="font-size:9px">${PL[t.priority]}</span>`:'';
+    return `<div class="cmd-result ${t.done?'done-item':''} ${i===cmdSelectedIdx?'selected':''}" onclick="cmdSelectTask('${t.id}')">
+      <div class="task-check ${t.done?'checked':''}" style="flex-shrink:0;pointer-events:none"></div>
+      <span class="cmd-result-text" style="flex:1;font-size:13px">${esc(t.text)}</span>
+      ${prio}
+      <span class="cmd-result-list">${list?esc(list.name):''}</span>
+    </div>`;
+  }).join('');
+}
+function cmdKeyDown(e){
+  const results=document.querySelectorAll('.cmd-result');
+  if(e.key==='ArrowDown'){e.preventDefault();cmdSelectedIdx=Math.min(cmdSelectedIdx+1,results.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();cmdSelectedIdx=Math.max(cmdSelectedIdx-1,0);}
+  else if(e.key==='Enter'){e.preventDefault();results[cmdSelectedIdx]?.click();}
+  else if(e.key==='Escape'){closeCmd();return;}
+  results.forEach((r,i)=>r.classList.toggle('selected',i===cmdSelectedIdx));
+}
+function cmdSelectTask(id){
+  closeCmd();
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  // Navigeer naar de lijst en open de taak
+  state.globalView=null;state.activeListId=t.list_id;state.filter='all';state.search='';
+  const list=state.lists.find(l=>l.id===t.list_id);
+  if(list?.parent_id)state.expanded[list.parent_id]=true;
+  render();
+  // Highlight de taak even
+  setTimeout(()=>{
+    const row=document.getElementById('tr-'+id);
+    if(row){row.scrollIntoView({behavior:'smooth',block:'center'});row.style.background='var(--accent-soft)';setTimeout(()=>row.style.background='',1200);}
+  },100);
+}
+// Keyboard shortcut
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openCmd();}
+  if(e.key==='Escape'&&document.getElementById('cmd-overlay').style.display!=='none')closeCmd();
+});
 
 // Drag & drop
 function onDragStart(e,id){
@@ -509,12 +608,14 @@ function renderSidebar(){
   const open=state.tasks.filter(t=>!t.done).length;
   const done=state.tasks.filter(t=>t.done).length;
   const waiting=state.tasks.filter(t=>t.waiting_for&&!t.done).length;
+  const today=[...todayTasks].filter(id=>state.tasks.find(t=>t.id===id&&!t.done)).length;
+  document.getElementById('global-today-count').textContent=today||'';
   document.getElementById('global-all-count').textContent=all||'';
   document.getElementById('global-high-count').textContent=high||'';
   document.getElementById('global-open-count').textContent=open||'';
   document.getElementById('global-done-count').textContent=done||'';
   document.getElementById('global-waiting-count').textContent=waiting||'';
-  ['all','high','open','done','waiting'].forEach(v=>{
+  ['today','all','high','open','done','waiting'].forEach(v=>{
     document.getElementById('global-'+v+'-btn').classList.toggle('active',state.globalView===v);
   });
 }
@@ -536,7 +637,7 @@ function closeSidebar(){
 function renderTopbar(){
   const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
-    const labels={'all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond','waiting':'Wacht op'};
+    const labels={'today':'Vandaag','all':'Alle taken','high':'Hoge prioriteit','open':'Alle open taken','done':'Afgerond','waiting':'Wacht op'};
     document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="Zoeken..." value="${esc(state.search)}" oninput="setSearch(this.value)"/>`;
     return;
@@ -559,7 +660,8 @@ function getFiltered(){
   let t;
   if(state.globalView){
     t=state.tasks;
-    if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
+    if(state.globalView==='today')t=t.filter(t=>todayTasks.has(t.id)&&!t.done);
+    else if(state.globalView==='high')t=t.filter(t=>t.priority==='high'&&!t.done);
     else if(state.globalView==='open')t=t.filter(t=>!t.done);
     else if(state.globalView==='done')t=t.filter(t=>t.done);
     else if(state.globalView==='waiting'){
@@ -595,10 +697,14 @@ function taskHTML(t,showList=false){
   const listLabel=list?`<span class="task-list-label"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block;flex-shrink:0"></span>${esc(list.name)}</span>`:'';
   const due=dueDateLabel(t.due_date);
   const waiting=t.waiting_for?`<span class="task-waiting"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>${esc(t.waiting_for)}</span>`:'';
+  const recLabels={daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks'};
+  const recBadge=t.recurrence&&recLabels[t.recurrence]?`<span class="recurrence-badge"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6a4 4 0 0 1 4-4 4 4 0 0 1 3 1.3"/><polyline points="9,1 9,4 6,4"/><path d="M10 6a4 4 0 0 1-4 4 4 4 0 0 1-3-1.3"/><polyline points="3,11 3,8 6,8"/></svg>${recLabels[t.recurrence]}</span>`:'';
   const hasExtra=t.notes||t.due_date||t.waiting_for;
   const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
   const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
   const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
+  const isToday=todayTasks.has(t.id);
+  const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?'Verwijder uit Vandaag':'Voeg toe aan Vandaag'}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';
   return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
     <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
@@ -606,11 +712,12 @@ function taskHTML(t,showList=false){
       <div class="task-text">${esc(t.text)}</div>
       <div class="task-meta" style="flex-wrap:wrap;gap:5px">
         ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
-        ${due}${waiting}${listLabel}
+        ${due}${waiting}${recBadge}${listLabel}
       </div>
       ${notesEl}
     </div>
     <div class="task-actions">
+      ${todayBtn}
       <button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>
       <button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
     </div>
@@ -807,7 +914,16 @@ function editTask(id){
       </select></div>
       <div><label>Deadline</label><input type="date" id="modal-task-due" value="${t.due_date||''}"/></div>
     </div>
-    <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
+    <div class="modal-row-2">
+      <div><label>Wacht op</label><input id="modal-task-waiting" placeholder="Naam persoon of team..." value="${esc(t.waiting_for||'')}"/></div>
+      <div><label>Herhaling</label><select id="modal-task-recurrence">
+        <option value="" ${!t.recurrence?'selected':''}>Geen</option>
+        <option value="daily" ${t.recurrence==='daily'?'selected':''}>Dagelijks</option>
+        <option value="weekly" ${t.recurrence==='weekly'?'selected':''}>Wekelijks</option>
+        <option value="monthly" ${t.recurrence==='monthly'?'selected':''}>Maandelijks</option>
+        <option value="yearly" ${t.recurrence==='yearly'?'selected':''}>Jaarlijks</option>
+      </select></div>
+    </div>
     <div><label>Notities</label><textarea id="modal-task-notes" rows="3" placeholder="Extra context, links, aantekeningen...">${esc(t.notes||'')}</textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
@@ -821,9 +937,43 @@ async function submitEditTask(id){
   const due=document.getElementById('modal-task-due').value;
   const notes=document.getElementById('modal-task-notes').value.trim();
   const waiting=document.getElementById('modal-task-waiting').value.trim();
+  const recurrence=document.getElementById('modal-task-recurrence').value;
   if(!text)return;
   closeModal();
-  await updateTask(id,text,prio,due,notes,waiting);
+  await updateTask(id,text,prio,due,notes,waiting,recurrence);
+}
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence){
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;
+  render();
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null},prefer:'return=minimal'});
+}
+function nextDueDate(current,recurrence){
+  if(!current||!recurrence)return null;
+  const d=new Date(current);
+  if(recurrence==='daily')d.setDate(d.getDate()+1);
+  else if(recurrence==='weekly')d.setDate(d.getDate()+7);
+  else if(recurrence==='monthly')d.setMonth(d.getMonth()+1);
+  else if(recurrence==='yearly')d.setFullYear(d.getFullYear()+1);
+  return d.toISOString().split('T')[0];
+}
+async function toggleTask(id){
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  t.done=!t.done;
+  if(t.done&&t.recurrence){
+    // Maak nieuwe taak aan met volgende deadline
+    const newDue=nextDueDate(t.due_date,t.recurrence);
+    const pos=state.tasks.filter(x=>x.list_id===t.list_id).length;
+    const body={list_id:t.list_id,text:t.text,priority:t.priority,done:false,position:pos,recurrence:t.recurrence,waiting_for:t.waiting_for||null,notes:t.notes||null};
+    if(newDue)body.due_date=newDue;
+    const res=await sb('tasks',{method:'POST',body});
+    if(res&&res[0])state.tasks.push(res[0]);
+    showToast(`Herhaaltaak aangemaakt${newDue?' voor '+new Date(newDue).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}):''}`)
+  }
+  // Remove from today if done
+  if(t.done){todayTasks.delete(id);saveTodayTasks();}
+  render();
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
 }
 function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Annuleren</button><button class="btn-primary btn-danger" onclick="confirmAction()">Verwijderen</button></div></div></div>`;
@@ -832,8 +982,21 @@ function openConfirmModal(title,msg,onConfirm){
 function openReleaseNotes(){
   const releases=[
     {
-      version:'2.5.0', date:'2026-04-15', latest:true,
-      notes:['Filteren op persoon in "Wacht op" weergave','Klikbare persoonspills tonen wie er op wacht en hoeveel taken','Klik nogmaals om filter te verwijderen']
+      version:'3.0.0', date:'2026-04-15', latest:true,
+      notes:[
+        'Vandaag focuslijst — ster-icoontje op elke taak om toe te voegen aan Vandaag',
+        'Vandaag teller in de sidebar met eigen weergave',
+        'Ctrl+K (of Cmd+K) zoeken over alle taken — navigeert direct naar de taak',
+        'Terugkerende taken — dagelijks, wekelijks, maandelijks of jaarlijks',
+        'Bij afvinken van herhaaltaak wordt automatisch een nieuwe aangemaakt',
+        'Herhaling badge zichtbaar op de taak',
+        'Wacht op filter per persoon (pills) in globale weergave',
+        'Fix: tekst verdwijnt niet meer bij prioriteit selecteren'
+      ]
+    },
+    {
+      version:'2.5.0', date:'2026-04-15',
+      notes:['Filteren op persoon in "Wacht op" weergave','Klikbare persoonspills met aantallen']
     },
     {
       version:'2.4.0', date:'2026-04-15',

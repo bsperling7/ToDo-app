@@ -232,14 +232,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .toast.show{opacity:1;}
 .version-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px;border-top:0.5px solid var(--border-light);margin-top:auto;}
 .version-label{font-size:10px;color:var(--text-tertiary);letter-spacing:.04em;}
-.info-btn{width:18px;height:18px;border-radius:50%;border:0.5px solid var(--border-mid);background:none;cursor:pointer;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:var(--font);line-height:1;}
-.info-btn:hover{background:var(--bg-primary);color:var(--text-secondary);}
-.release-notes{display:flex;flex-direction:column;gap:14px;max-height:340px;overflow-y:auto;padding-right:2px;}
-.release-version{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
-.release-badge{font-size:10px;font-weight:500;background:var(--bg-secondary);color:var(--text-tertiary);padding:1px 7px;border-radius:10px;border:0.5px solid var(--border-light);}
 .release-badge.latest{background:#EAF3DE;color:#3B6D11;}
-.release-date{font-size:11px;color:var(--text-tertiary);}
-.release-items{list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:4px;}
 .release-items li{font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5;}
 .release-items li::before{content:'·';color:var(--text-tertiary);flex-shrink:0;}
 .email-modal{width:400px;}
@@ -370,8 +363,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v4.4.0</span>
-      <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
+      <span class="version-label">v1.0.0-beta</span>
     </div>
   </div>
   <div id="wrapper">
@@ -1189,110 +1181,7 @@ function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary btn-danger" onclick="confirmAction()">${tr('del')}</button></div></div></div>`;
   window._confirmAction=onConfirm;
 }
-function openReleaseNotes(){
-  const releases=[
-    {
-      version:'4.1.0', date:'2026-04-17', latest:true,
-      notes:[
-        'Week-filter: toont alle open taken met een deadline in de huidige werkweek (ma-vr), vanaf vandaag',
-        'Tweetalige interface: Nederlands/Engels met taalswitch in de sidebar',
-        'Taalkeuze wordt onthouden in de browser',
-        'Vandaag-filter toont nu ook taken met deadline = vandaag (automatisch)',
-        'Nieuw Impact-veld per taak: Blocker / Hoog / Medium / Laag',
-        'Impact badge zichtbaar op elke taak in de lijst',
-        'Impact instelbaar via inline toevoegen en taakbewerking',
-        'Blocker-badge met rode kleur voor maximale zichtbaarheid',
-        'Jira → Taken koppeling via Atlassian MCP (Claude importeert direct naar Supabase)',
-        'Jira issue-key badge zichtbaar op elke taak',
-        'Weekoverzicht exporteren naar Excel (.xlsx) met samenvatting, alle taken en per-lijst tabbladen',
-        'Weekoverzicht exporteren naar PDF (printklaar rapport met statistieken incl. blockers)',
-        'Week-navigatie in de exportmodal (vorige/huidige/volgende week)',
-        'Export-knop in de topbar bij elke lijst en globale weergave',
-        'Excel export bevat nu ook Impact-kolom',
-      ]
-    },
-    {
-      version:'3.0.0', date:'2026-04-15',
-      notes:[
-        'Vandaag focuslijst — ster-icoontje op elke taak om toe te voegen aan Vandaag',
-        'Vandaag teller in de sidebar met eigen weergave',
-        'Ctrl+K (of Cmd+K) zoeken over alle taken — navigeert direct naar de taak',
-        'Terugkerende taken — dagelijks, wekelijks, maandelijks of jaarlijks',
-        'Bij afvinken van herhaaltaak wordt automatisch een nieuwe aangemaakt',
-        'Herhaling badge zichtbaar op de taak',
-        'Wacht op filter per persoon (pills) in globale weergave',
-        'Fix: tekst verdwijnt niet meer bij prioriteit selecteren'
-      ]
-    },
-    {
-      version:'2.5.0', date:'2026-04-15',
-      notes:['Filteren op persoon in "Wacht op" weergave','Klikbare persoonspills met aantallen']
-    },
-    {
-      version:'2.4.0', date:'2026-04-15',
-      notes:['Filter op "Wacht op" per lijst en globaal','Globale "Wacht op" weergave in sidebar met teller']
-    },
-    {
-      version:'2.3.0', date:'2026-04-14',
-      notes:['Mobiele weergave — sidebar schuift in via hamburger','PWA installeerbaar als app op telefoon']
-    },
-    {
-      version:'2.2.0', date:'2026-04-14',
-      notes:['Deadline per taak met kleurcodering','Notities per taak — uitklapbaar','Wacht op — koppel een taak aan een persoon']
-    },
-    {
-      version:'2.1.0', date:'2026-04-14',
-      notes:['Taak toevoegen inline bovenaan de lijst','Prioriteit instellen via pills, Enter om op te slaan']
-    },
-    {
-      version:'2.0.0', date:'2026-04-14',
-      notes:['Nieuw logo met favicon zichtbaar in browser tab','Frissere kleurthema: blauw-paars accent en mint groen','Donker thema vernieuwd met diepe marineblauw tinten']
-    },
-    {
-      version:'1.9.0', date:'2026-04-01',
-      notes:['Email → Taken werkt nu via Claude in een nieuw tabblad','Geen admin rechten of token meer nodig','Knop opent Claude met vooraf ingevulde prompt']
-    },
-    {
-      version:'1.8.0', date:'2026-04-01',
-      notes:['Email → Taken werkt volledig in de browser','Token opgeslagen in localStorage','Slimme regel-gebaseerde analyse zonder externe API']
-    },
-    {
-      version:'1.7.0', date:'2026-04-01',
-      notes:['Email → Taken knop toegevoegd in de sidebar','Haalt emails van vandaag op via Microsoft Graph','Taken worden direct in de Email lijst opgeslagen']
-    },
-    {
-      version:'1.6.0', date:'2026-04-01',
-      notes:['Themaschakelaar vereenvoudigd: alleen licht en donker','Schuifregelaar vervangt de drie-standen knop']
-    },
-    {
-      version:'1.5.0', date:'2025-04-01',
-      notes:['Versienummer toegevoegd met release notes (deze popup)','Info-knop onderin de sidebar']
-    },
-    {
-      version:'1.4.0', date:'2025-04-01',
-      notes:['21 kleuren beschikbaar (7 families × 3 tinten)','Globale filters: alle taken, hoge prio, open, afgerond','Lijstlabel zichtbaar bij taken in globale weergave','Taak-invoer verborgen in globale weergave']
-    },
-    {
-      version:'1.3.0', date:'2025-04-01',
-      notes:['Bewerken van lijsten: naam en kleur aanpassen via potlood-icoon','Verwijder-bevestiging meldt ook sublijsten']
-    },
-    {
-      version:'1.2.0', date:'2025-04-01',
-      notes:['Dark/light/auto themaschakelaar (keuze wordt onthouden)','Lijsten slepen om volgorde te wijzigen','Sublijsten: meerdere niveaus mogelijk','Breadcrumb-navigatie in de topbar']
-    },
-    {
-      version:'1.1.0', date:'2025-04-01',
-      notes:['Supabase synchronisatie: data opgeslagen in de cloud','Polling elke 15 seconden voor wijzigingen van andere apparaten','Sync-indicator (groen/oranje/rood) in de sidebar']
-    },
-    {
-      version:'1.0.0', date:'2025-04-01',
-      notes:['Eerste versie: meerdere lijsten aanmaken en beheren','Taken toevoegen met prioriteit (hoog/medium/laag)','Taken afvinken, bewerken en verwijderen','Filteren op status en prioriteit, zoekfunctie','Automatische dark mode op basis van systeemvoorkeur']
-    },
-  ];
-  const html=releases.map((r,i)=>`
-    <div>
-      <div class="release-version">
-        ${r.version}
+function openReleaseNotes(){}
         ${r.latest?'<span class="release-badge latest">Huidig</span>':''}
       </div>
       <div class="release-date">${r.date}</div>

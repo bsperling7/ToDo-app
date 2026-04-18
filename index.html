@@ -315,6 +315,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         Vandaag
         <span class="count" id="global-today-count"></span>
       </button>
+      <button class="global-item" id="global-week-btn" onclick="setGlobalView('week')">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="10" y1="1" x2="10" y2="3"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="4" y1="8" x2="10" y2="8"/></svg>
+        Deze week
+        <span class="count" id="global-week-count"></span>
+      </button>
       <button class="global-item" id="global-all-btn" onclick="setGlobalView('all')">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
         Alle taken
@@ -340,11 +345,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         Wacht op
         <span class="count" id="global-waiting-count"></span>
       </button>
-      <button class="global-item" id="global-week-btn" onclick="setGlobalView('week')">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="10" y1="1" x2="10" y2="3"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="4" y1="8" x2="10" y2="8"/></svg>
-        Deze week
-        <span class="count" id="global-week-count"></span>
-      </button>
+
     </div>
     <div class="sidebar-bottom">
       <button class="add-list-btn" onclick="openNewListModal(null)">
@@ -362,6 +363,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
       <button class="add-list-btn" onclick="openExportModal()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>
         Weekoverzicht exporteren
+      </button>
+      <button class="add-list-btn highlight" onclick="openIBPExport()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><line x1="7" y1="4" x2="7" y2="7"/><circle cx="7" cy="10" r="0.8" fill="currentColor" stroke="none"/></svg>
+        IBP rapport exporteren
       </button>
     </div>
     <div class="version-bar">
@@ -475,7 +480,7 @@ nl:{
   nav:'navigeren',enterOp:'openen',escCl:'sluiten',
   weekTitle:'Weekoverzicht Taken',genOn:'Gegenereerd op',
   statTotal:'Totaal taken',statDone:'Afgerond',statOpen:'Open',statHighPrio:'Hoge prio open',
-  exportTitle:'Weekoverzicht exporteren',thisWeek:'Deze week',
+  exportTitle:'Weekoverzicht exporteren',thisWeek:'Deze week',ibpExport:'IBP rapport exporteren',ibpReportTitle:'IBP Rapport',ibpReportSubtitle:'Overzicht van alle Impact, Blocker en Priority taken',impactSection:'Impact',blockerSection:'Blockers',prioritySection:'Priority',noIbpTasks:'Geen taken gevonden met dit IBP label',improveWithClaude:'Verbeteren met Claude ↗',ibpExportExcel:'Exporteren als Excel',
 },
 en:{
   appTitle:'Tasks',newList:'New list',emailTaken:'Email → Tasks',jiraTaken:'Jira → Tasks',exportWeek:'Export week overview',
@@ -510,7 +515,7 @@ en:{
   nav:'navigate',enterOp:'open',escCl:'close',
   weekTitle:'Tasks Week Overview',genOn:'Generated on',
   statTotal:'Total tasks',statDone:'Completed',statOpen:'Open',statHighPrio:'High prio open',
-  exportTitle:'Export week overview',thisWeek:'This week',
+  exportTitle:'Export week overview',thisWeek:'This week',ibpExport:'Export IBP report',ibpReportTitle:'IBP Report',ibpReportSubtitle:'Overview of all Impact, Blocker and Priority tasks',impactSection:'Impact',blockerSection:'Blockers',prioritySection:'Priority',noIbpTasks:'No tasks found with this IBP label',improveWithClaude:'Improve with Claude ↗',ibpExportExcel:'Export as Excel',
 }};
 function tr(k){ return (T[lang]&&T[lang][k]) || T.nl[k] || k; }
 function toggleLang(){
@@ -987,6 +992,7 @@ function updateStaticLabels(){
     if(t.includes('Email'))b.innerHTML=b.innerHTML.replace(/Email → Taken|Email → Tasks/,tr('emailTaken'));
     if(t.includes('Jira'))b.innerHTML=b.innerHTML.replace(/Jira → Taken|Jira → Tasks/,tr('jiraTaken'));
     if(t.includes('Weekoverzicht')||t.includes('Export week'))b.innerHTML=b.innerHTML.replace(/Weekoverzicht exporteren|Export week overview/,tr('exportWeek'));
+    if(t.includes('IBP'))b.innerHTML=b.innerHTML.replace(/IBP rapport exporteren|Export IBP report/,tr('ibpExport'));
   });
   // Overview label
   const ov=document.querySelector('.list-divider');
@@ -1459,6 +1465,125 @@ function exportToPDF() {
   }
   closeModal();
   showToast(tr('pdfOpened'));
+}
+
+
+// ── IBP Rapport exporteren ────────────────────────────────────
+function openIBPExport(){
+  const impacts = state.tasks.filter(t=>t.ibp==='impact'&&!t.done);
+  const blockers = state.tasks.filter(t=>t.ibp==='blocker'&&!t.done);
+  const priorities = state.tasks.filter(t=>t.ibp==='priority'&&!t.done);
+  const total = impacts.length + blockers.length + priorities.length;
+
+  function taskRows(tasks){
+    if(!tasks.length) return '<div style="font-size:12px;color:var(--text-tertiary);padding:4px 0">'+tr('noIbpTasks')+'</div>';
+    return tasks.map(t=>{
+      const list=state.lists.find(l=>l.id===t.list_id);
+      const prioLabel={high:tr('high'),medium:tr('medium'),low:tr('low'),none:''}[t.priority]||'';
+      const prioCls={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
+      const due=t.due_date?'<span class="task-due">'+t.due_date+'</span>':'';
+      const waiting=t.waiting_for?'<span class="task-waiting">'+esc(t.waiting_for)+'</span>':'';
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-light)">'
+        +'<div style="flex:1"><div style="font-size:13px;color:var(--text-primary)">'+esc(t.text)+'</div>'
+        +'<div style="display:flex;gap:6px;margin-top:3px;flex-wrap:wrap">'
+        +(prioLabel?'<span class="tag '+prioCls+'">'+prioLabel+'</span>':'')+due+waiting
+        +(list?'<span style="font-size:10px;color:var(--text-tertiary)">'+esc(list.name)+'</span>':'')
+        +(t.notes?'<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;width:100%">'+esc(t.notes)+'</div>':'')
+        +'</div></div>'
+        +'</div>';
+    }).join('');
+  }
+
+  function section(label, emoji, tasks, color){
+    return '<div style="margin-bottom:20px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      +'<span style="font-size:15px">'+emoji+'</span>'
+      +'<h3 style="font-size:14px;font-weight:600;color:'+color+'">'+label+' ('+tasks.length+')</h3>'
+      +'</div>'
+      +taskRows(tasks)
+      +'</div>';
+  }
+
+  document.getElementById('modal-container').innerHTML=
+    '<div class="modal-bg" onclick="if(event.target===this)closeModal()">'
+    +'<div class="modal" style="width:480px;max-height:80vh;overflow-y:auto">'
+    +'<h3 style="margin-bottom:4px">'+tr('ibpReportTitle')+'</h3>'
+    +'<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px">'+total+' '+tr('noIbpTasks').replace('Geen','').replace('No tasks','')+'taken — '+new Date().toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>'
+    +section(tr('impactSection'),'⚡',impacts,'#856404')
+    +section(tr('blockerSection'),'🔴',blockers,'#A32D2D')
+    +section(tr('prioritySection'),'🔺',priorities,'#1a56db')
+    +'<div class="modal-actions" style="gap:6px;flex-wrap:wrap">'
+    +'<button class="btn-cancel" onclick="closeModal()">'+tr('cancel')+'</button>'
+    +'<button class="btn-primary" style="background:#1D9E75" onclick="exportIBPExcel()">'+tr('ibpExportExcel')+'</button>'
+    +'<button class="btn-primary" onclick="exportIBPWithClaude()">'+tr('improveWithClaude')+'</button>'
+    +'</div>'
+    +'</div></div>';
+}
+
+function exportIBPExcel(){
+  const impacts = state.tasks.filter(t=>t.ibp==='impact'&&!t.done);
+  const blockers = state.tasks.filter(t=>t.ibp==='blocker'&&!t.done);
+  const priorities = state.tasks.filter(t=>t.ibp==='priority'&&!t.done);
+  const wb = XLSX.utils.book_new();
+  const prioL={high:tr('high'),medium:tr('medium'),low:tr('low'),none:''};
+
+  function makeSheet(tasks){
+    const headers=['Taak','Lijst','Prioriteit','Deadline','Wacht op','Notities'];
+    const rows=tasks.map(t=>{
+      const list=state.lists.find(l=>l.id===t.list_id);
+      return [t.text,list?list.name:'',prioL[t.priority]||'',t.due_date||'',t.waiting_for||'',t.notes||''];
+    });
+    const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+    ws['!cols']=[{wch:45},{wch:18},{wch:10},{wch:12},{wch:15},{wch:35}];
+    return ws;
+  }
+
+  // Summary sheet
+  const summary=[
+    [tr('ibpReportTitle'), new Date().toLocaleDateString()],
+    [],
+    ['IBP','Aantal'],
+    [tr('impactSection'), impacts.length],
+    [tr('blockerSection'), blockers.length],
+    [tr('prioritySection'), priorities.length],
+    ['Totaal', impacts.length+blockers.length+priorities.length],
+  ];
+  const ss=XLSX.utils.aoa_to_sheet(summary);
+  ss['!cols']=[{wch:20},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ss, 'Samenvatting');
+
+  if(impacts.length) XLSX.utils.book_append_sheet(wb, makeSheet(impacts), tr('impactSection').slice(0,31));
+  if(blockers.length) XLSX.utils.book_append_sheet(wb, makeSheet(blockers), tr('blockerSection').slice(0,31));
+  if(priorities.length) XLSX.utils.book_append_sheet(wb, makeSheet(priorities), tr('prioritySection').slice(0,31));
+
+  XLSX.writeFile(wb, 'IBP_rapport_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  showToast('IBP Excel gedownload');
+}
+
+function exportIBPWithClaude(){
+  const impacts = state.tasks.filter(t=>t.ibp==='impact'&&!t.done);
+  const blockers = state.tasks.filter(t=>t.ibp==='blocker'&&!t.done);
+  const priorities = state.tasks.filter(t=>t.ibp==='priority'&&!t.done);
+
+  function taskList(tasks){
+    return tasks.map(t=>{
+      const list=state.lists.find(l=>l.id===t.list_id);
+      const prio={high:'Hoog',medium:'Medium',low:'Laag',none:''}[t.priority]||'';
+      return '- '+t.text+(list?' ['+list.name+']':'')+(prio?' (prio: '+prio+')':'')+(t.due_date?' deadline: '+t.due_date:'')+(t.waiting_for?' wacht op: '+t.waiting_for:'')+(t.notes?'\n  Notitie: '+t.notes:'');
+    }).join('\n');
+  }
+
+  const today=new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const prompt='Maak een professioneel IBP-statusrapport op basis van onderstaande taken. Vandaag is '+today+'.\n\n'
+    +'Schrijf een beknopte managementsamenvatting (3-5 zinnen), gevolgd door drie secties: Impact, Blockers en Priorities. '
+    +'Per sectie een korte inleiding en de taken als bullets. Sluit af met aanbevolen acties voor deze week. '
+    +'Schrijf in het Nederlands, professionele zakelijke toon.\n\n'
+    +'## ⚡ Impact ('+impacts.length+' items)\n'+(impacts.length?taskList(impacts):'Geen items')+'\n\n'
+    +'## 🔴 Blockers ('+blockers.length+' items)\n'+(blockers.length?taskList(blockers):'Geen items')+'\n\n'
+    +'## 🔺 Priorities ('+priorities.length+' items)\n'+(priorities.length?taskList(priorities):'Geen items');
+
+  window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
+  closeModal();
 }
 
 setInterval(async()=>{

@@ -273,6 +273,40 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .export-option-desc{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
 .add-list-btn.highlight{color:var(--accent);font-weight:500;}
 .add-list-btn.highlight:hover{background:var(--accent-soft);}
+
+/* ── Kanban ── */
+.kanban-view{display:flex;gap:12px;padding:12px 20px;overflow-x:auto;height:100%;align-items:flex-start;}
+.kanban-col{flex:0 0 280px;background:var(--bg-secondary);border-radius:var(--radius-lg);border:0.5px solid var(--border-light);display:flex;flex-direction:column;max-height:calc(100vh - 180px);}
+.kanban-col-header{padding:10px 14px 8px;display:flex;align-items:center;gap:8px;border-bottom:0.5px solid var(--border-light);flex-shrink:0;}
+.kanban-col-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.kanban-col-count{font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 7px;border-radius:10px;}
+.kanban-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-todo{background:#9196b0;}
+.dot-inprogress{background:#BA7517;}
+.dot-done{background:#1D9E75;}
+.kanban-cards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.kanban-card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-md);padding:10px 12px;cursor:grab;transition:box-shadow .15s,border-color .15s;user-select:none;}
+.kanban-card:hover{border-color:var(--border-mid);box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.kanban-card.dragging{opacity:.4;cursor:grabbing;}
+.kanban-col.drag-over{background:var(--accent-soft);border-color:var(--accent);}
+.kanban-card-title{font-size:13px;color:var(--text-primary);line-height:1.4;margin-bottom:6px;word-break:break-word;}
+.kanban-card-meta{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.kanban-card-actions{display:flex;gap:4px;margin-top:8px;opacity:0;transition:opacity .1s;}
+.kanban-card:hover .kanban-card-actions{opacity:1;}
+.kanban-add-trigger{display:flex;align-items:center;gap:6px;padding:7px 8px;margin:4px 8px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:12px;color:var(--text-tertiary);border:0.5px dashed transparent;transition:all .15s;}
+.kanban-add-trigger:hover{color:var(--accent);border-color:var(--border-mid);background:var(--accent-soft);}
+.kanban-status-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--border-mid);background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font);transition:all .1s;white-space:nowrap;}
+.kanban-status-btn:hover{background:var(--bg-secondary);}
+.kanban-status-btn.todo{color:#9196b0;border-color:#9196b0;}
+.kanban-status-btn.inprogress{color:#BA7517;border-color:#EF9F27;background:#FAEEDA;}
+.kanban-status-btn.done{color:#1D9E75;border-color:#5DCAA5;background:#EAF3DE;}
+/* View toggle */
+.view-toggle{display:flex;gap:2px;background:var(--bg-tertiary);border-radius:var(--radius-md);padding:2px;}
+.view-btn{width:28px;height:24px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.view-btn.active{background:var(--bg-primary);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+/* Global add */
+.global-add-form{background:var(--bg-secondary);border:0.5px solid var(--border-mid);border-radius:var(--radius-md);padding:10px 12px;margin:0 0 10px;display:flex;flex-direction:column;gap:8px;}
+.list-select{font-size:12px;padding:5px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);outline:none;width:100%;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>
@@ -413,7 +447,7 @@ const COLORS=[
 ];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null,viewMode:'list',globalAddOpen:false,globalAddListId:null};
 let todayTasks=new Set(JSON.parse(localStorage.getItem('today_tasks')||'[]'));
 function saveTodayTasks(){localStorage.setItem('today_tasks',JSON.stringify([...todayTasks]));}
 function toggleToday(id,e){
@@ -583,9 +617,10 @@ async function updatePositions(lists){
     const l=state.lists.find(l=>l.id===lists[i].id);if(l)l.position=i;
   }
 }
-async function createTask(text,priority,dueDate=null,waitingFor=null,ibp=null,jiraKey=null){
-  const pos=state.tasks.filter(t=>t.list_id===state.activeListId).length;
-  const body={list_id:state.activeListId,text,priority,done:false,position:pos};
+async function createTask(text,priority,dueDate=null,waitingFor=null,ibp=null,jiraKey=null,listIdOverride=null,kanbanStatus=null){
+  const lid=listIdOverride||state.activeListId;
+  const pos=state.tasks.filter(t=>t.list_id===lid).length;
+  const body={list_id:lid,text,priority,done:false,position:pos,kanban_status:kanbanStatus||'todo'};
   if(dueDate)body.due_date=dueDate;
   if(waitingFor)body.waiting_for=waitingFor;
   if(ibp&&ibp!=='none')body.ibp=ibp;
@@ -606,11 +641,11 @@ function toggleTaskExpand(id,e){
   const row=document.getElementById('tr-'+id);
   if(row)row.classList.toggle('expanded',!!state.expandedTasks[id]);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;t.kanban_status=kanbanStatus||t.kanban_status||'todo';
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||'todo'},prefer:'return=minimal'});
 }
 
 // ── Ctrl+K zoeken ────────────────────────────────────────
@@ -781,7 +816,14 @@ function renderTopbar(){
   const hamburger=`<button class="hamburger" onclick="openSidebar()" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="4" x2="15" y2="4"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="12" x2="15" y2="12"/></svg></button>`;
   if(state.globalView){
     const labels={'today':tr('today'),'all':tr('allTasks'),'high':tr('highPrio'),'open':tr('allOpen'),'done':tr('done'),'waiting':tr('waitingOn'),'week':tr('thisWeek')};
-    document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span>`;
+    document.getElementById('list-header').innerHTML=`${hamburger}<span style="font-size:17px;font-weight:500;color:var(--text-primary)">${labels[state.globalView]}</span><div style="margin-left:auto"><div class="view-toggle">
+      <button class="view-btn" id="view-list-btn" onclick="setViewMode('list')" title="Lijstweergave">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="13" y2="3"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg>
+      </button>
+      <button class="view-btn" id="view-kanban-btn" onclick="setViewMode('kanban')" title="Kanban">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="3.5" height="12" rx="1"/><rect x="5.25" y="1" width="3.5" height="8" rx="1"/><rect x="9.5" y="1" width="3.5" height="10" rx="1"/></svg>
+      </button>
+    </div></div>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/>
     <button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
     return;
@@ -795,7 +837,14 @@ function renderTopbar(){
     header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1">${bc}<input class="list-name-input" id="name-editor" value="${esc(list.name)}" onblur="saveListName()" onkeydown="if(event.key==='Enter')saveListName();if(event.key==='Escape')cancelEditName()"/></div>`;
     setTimeout(()=>{const el=document.getElementById('name-editor');if(el){el.focus();el.select();}},0);
   }else{
-    header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button></div></div>`;
+    header.innerHTML=`${hamburger}<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">${bc}<div style="display:flex;align-items:center;gap:8px"><span class="dot" style="background:${list.color};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0"></span><span class="list-name-display" onclick="startEditName()">${esc(list.name)}</span><button class="icon-btn" onclick="confirmDeleteList('${list.id}',event)" title="Verwijderen" style="opacity:.45;margin-left:2px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 11,3"/><path d="M4,3V2h4v1"/><rect x="2" y="3" width="8" height="8" rx="1"/></svg></button><div style="margin-left:auto"><div class="view-toggle">
+      <button class="view-btn" id="view-list-btn" onclick="setViewMode('list')" title="Lijstweergave">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="13" y2="3"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="11" x2="13" y2="11"/></svg>
+      </button>
+      <button class="view-btn" id="view-kanban-btn" onclick="setViewMode('kanban')" title="Kanban">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="3.5" height="12" rx="1"/><rect x="5.25" y="1" width="3.5" height="8" rx="1"/><rect x="9.5" y="1" width="3.5" height="10" rx="1"/></svg>
+      </button>
+    </div></div></div></div>`;
   }
   const filters=[['all',tr('fAll')],['open',tr('fOpen')],['done',tr('fDone')],['high',tr('fHighPrio')],['waiting',tr('fWaiting')]];
   document.getElementById('filter-row').innerHTML=filters.map(([k,v])=>`<button class="filter-btn ${state.filter===k?'active':''}" onclick="setFilter('${k}')">${v}</button>`).join('')+`<input class="search-input" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/><button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
@@ -872,6 +921,10 @@ function taskHTML(t,showList=false){
   const isExpanded=state.expandedTasks&&state.expandedTasks[t.id];
   const expandBtn=hasExtra?`<button class="task-expand-btn" onclick="toggleTaskExpand('${t.id}',event)" title="Details"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,2 7,5 3,8"/></svg></button>`:'';
   const notesEl=t.notes?`<div class="task-notes">${esc(t.notes)}</div>`:'';
+  const kStatus=t.kanban_status||'todo';
+  const kLabels={todo:'To Do',inprogress:'In Progress',done:'Done'};
+  const kNext={todo:'inprogress',inprogress:'done',done:'todo'};
+  const statusBtn='<button class="kanban-status-btn '+kStatus+'" onclick="cycleKanbanStatus(''+t.id+'',event)" title="Status wijzigen">'+kLabels[kStatus]+'</button>';
   const isToday=todayTasks.has(String(t.id));
   const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?tr('removeToday'):tr('addToday')}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
@@ -880,7 +933,7 @@ function taskHTML(t,showList=false){
       <div class="task-text">${esc(t.text)}</div>
       <div class="task-meta" style="flex-wrap:wrap;gap:5px">
         ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
-        ${due}${waiting}${recBadge}${ibpBadge}${jiraBadge}${listLabel}
+        ${statusBtn}${due}${waiting}${recBadge}${ibpBadge}${jiraBadge}${listLabel}
       </div>
       ${notesEl}
     </div>
@@ -890,6 +943,41 @@ function taskHTML(t,showList=false){
       <button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
     </div>
   </div>`;
+}
+function globalAddHTML(){
+  if(!state.globalView)return '';
+  const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
+  const pillLabel={none:tr('noPrio'),high:tr('high'),medium:tr('medium'),low:tr('low')};
+  const cur=state.inlineAddPrio||'none';
+  const prios=['none','high','medium','low'];
+  if(state.globalAddOpen){
+    const listOptions=state.lists.filter(l=>!l.parent_id).map(l=>'<option value="'+l.id+'"'+(l.id===state.globalAddListId?' selected':'')+'>'+(l.name||'')+'</option>').join('');
+    const subLists=state.lists.filter(l=>l.parent_id).map(l=>'<option value="'+l.id+'">'+(state.lists.find(p=>p.id===l.parent_id)?.name||'')+' / '+l.name+'</option>').join('');
+    return '<div class="global-add-form" id="global-add-form">'
+      +'<select class="list-select" id="global-task-list">'+listOptions+subLists+'</select>'
+      +'<input class="inline-add-input" id="global-task-text" placeholder="'+tr('taskPH')+'" onkeydown="if(event.key==='Enter')submitGlobalTask();if(event.key==='Escape')closeGlobalAdd()"/>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<input type="date" id="global-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="'+tr('deadlineLabel')+'"/>'
+      +'<input id="global-task-waiting" placeholder="'+tr('waitingShort')+'" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;"/>'
+      +'<select id="global-task-ibp" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;">'
+      +'<option value="none">IBP...</option>'
+      +'<option value="impact">'+tr('ibpImpact')+'</option>'
+      +'<option value="blocker">'+tr('ibpBlocker')+'</option>'
+      +'<option value="priority">'+tr('ibpPriority')+'</option>'
+      +'</select>'
+      +'</div>'
+      +'<div class="inline-add-footer">'
+      +prios.map(p=>'<button class="prio-pill '+(cur===p&&pillClass[p]?pillClass[p]:'')+'" onclick="setInlinePrio(''+p+'')">'+pillLabel[p]+'</button>').join('')
+      +'<div class="inline-add-actions">'
+      +'<button class="btn-discard" onclick="closeGlobalAdd()">'+tr('cancel')+'</button>'
+      +'<button class="btn-save" onclick="submitGlobalTask()">'+tr('save')+'</button>'
+      +'</div></div>'
+      +'</div>';
+  }
+  return '<div class="inline-add-trigger" onclick="openGlobalAdd()">'
+    +'<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>'
+    +tr('addTask')
+    +'</div>';
 }
 function inlineAddHTML(){
   if(state.globalView||!state.activeListId)return '';
@@ -939,6 +1027,7 @@ function renderTasks(){
     savedWaiting=document.getElementById('inline-task-waiting')?.value||'';
     savedIbp=document.getElementById('inline-task-ibp')?.value||'none';
   }
+  if(state.viewMode==='kanban'){renderKanban();return;}
   let personPills='';
   if(state.globalView==='waiting'){
     const allWaiting=state.tasks.filter(t=>t.waiting_for&&!t.done);
@@ -956,7 +1045,7 @@ function renderTasks(){
   }
 
   const f=getFiltered();
-  let h=inlineAddHTML()+personPills;
+  let h=(state.globalView?globalAddHTML():inlineAddHTML())+personPills;
   if(!f.length){
     h+='<div class="empty-state" style="height:160px"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="4" width="24" height="24" rx="4"/><line x1="10" y1="12" x2="22" y2="12"/><line x1="10" y1="17" x2="18" y2="17"/><line x1="10" y1="22" x2="15" y2="22"/></svg><span>Geen taken gevonden</span></div>';
     area.innerHTML=h;return;
@@ -1011,7 +1100,38 @@ function updateStaticLabels(){
 }
 function render(){renderSidebar();renderTopbar();renderTasks();applyLang();updateStaticLabels();}
 
-function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
+function selectList(id){state.activeListId=id;state.globalView=null;state.filter='all';state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();setViewMode(state.viewMode);}
+function openGlobalAdd(){
+  state.globalAddOpen=true;
+  state.globalAddListId=state.lists.find(l=>!l.parent_id)?.id||null;
+  state.inlineAddPrio='none';
+  renderTasks();
+}
+function closeGlobalAdd(){state.globalAddOpen=false;renderTasks();}
+async function submitGlobalTask(){
+  const inp=document.getElementById('global-task-text');
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text){inp.focus();return;}
+  const prio=state.inlineAddPrio||'none';
+  const due=document.getElementById('global-task-due')?.value||null;
+  const waiting=document.getElementById('global-task-waiting')?.value.trim()||null;
+  const listId=document.getElementById('global-task-list')?.value||state.globalAddListId;
+  const ibp=document.getElementById('global-task-ibp')?.value||null;
+  state.globalAddOpen=false;state.inlineAddPrio='none';
+  // Temporarily set activeListId for createTask
+  const prevListId=state.activeListId;
+  await createTask(text,prio,due,waiting,ibp,null,listId);
+  state.activeListId=prevListId;
+}
+function setViewMode(mode){
+  state.viewMode=mode;
+  renderTasks();
+  setTimeout(()=>{
+    document.getElementById('view-list-btn')?.classList.toggle('active',mode==='list');
+    document.getElementById('view-kanban-btn')?.classList.toggle('active',mode==='kanban');
+  },0);
+}
 function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
 function setFilter(f){state.filter=f;state.waitingFilter=null;state.inlineAddOpen=false;render();}
 function setWaitingFilter(name){state.waitingFilter=state.waitingFilter===name?null:name;renderTasks();}
@@ -1153,11 +1273,11 @@ async function submitEditTask(id){
   closeModal();
   await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;
+  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;t.kanban_status=kanbanStatus||t.kanban_status||'todo';
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||'todo'},prefer:'return=minimal'});
 }
 function nextDueDate(current,recurrence){
   if(!current||!recurrence)return null;
@@ -1167,6 +1287,14 @@ function nextDueDate(current,recurrence){
   else if(recurrence==='monthly')d.setMonth(d.getMonth()+1);
   else if(recurrence==='yearly')d.setFullYear(d.getFullYear()+1);
   return d.toISOString().split('T')[0];
+}
+async function setKanbanStatus(id, status){
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  t.kanban_status=status;
+  if(status==='done'){t.done=true;}
+  else{t.done=false;}
+  renderTasks();
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{kanban_status:status,done:status==='done'},prefer:'return=minimal'});
 }
 async function toggleTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
@@ -1584,6 +1712,119 @@ function exportIBPWithClaude(){
 
   window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
   closeModal();
+}
+
+
+function cycleKanbanStatus(id, e){
+  if(e)e.stopPropagation();
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  const next={todo:'inprogress',inprogress:'done',done:'todo'};
+  setKanbanStatus(id, next[t.kanban_status||'todo']);
+}
+
+function renderKanban(){
+  const area=document.getElementById('task-area');
+  const f=getFiltered();
+  const cols=[
+    {id:'todo',label:'To Do',dot:'dot-todo',tasks:f.filter(t=>(t.kanban_status||'todo')==='todo'&&!t.done)},
+    {id:'inprogress',label:'In Progress',dot:'dot-inprogress',tasks:f.filter(t=>t.kanban_status==='inprogress')},
+    {id:'done',label:'Done',dot:'dot-done',tasks:f.filter(t=>t.kanban_status==='done'||t.done)},
+  ];
+
+  function cardHTML(t){
+    const list=state.lists.find(l=>l.id===t.list_id);
+    const tc={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
+    const prio=t.priority&&t.priority!=='none'?'<span class="tag '+tc+'">'+PL[t.priority]+'</span>':'';
+    const due=dueDateLabel(t.due_date);
+    const ibpLabels={impact:tr('ibpImpact'),blocker:tr('ibpBlocker'),priority:tr('ibpPriority')};
+    const ibpCls={impact:'ibp-impact',blocker:'ibp-blocker',priority:'ibp-priority'};
+    const ibp=t.ibp&&t.ibp!=='none'&&ibpLabels[t.ibp]?'<span class="ibp-badge '+ibpCls[t.ibp]+'">'+ibpLabels[t.ibp]+'</span>':'';
+    const listLabel=list?'<span style="font-size:10px;color:var(--text-tertiary)">'+esc(list.name)+'</span>':'';
+    return '<div class="kanban-card" draggable="true" id="kc-'+t.id+'"'
+      +' ondragstart="onCardDragStart(event,\''+t.id+'\')"'
+      +' ondragend="onCardDragEnd(event)">'
+      +'<div class="kanban-card-title">'+esc(t.text)+'</div>'
+      +'<div class="kanban-card-meta">'+prio+due+ibp+listLabel+'</div>'
+      +'<div class="kanban-card-actions">'
+      +'<button class="icon-btn" onclick="editTask(\''+t.id+'\')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>'
+      +'<button class="icon-btn" onclick="removeTask(\''+t.id+'\')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>'
+      +'</div>'
+      +'</div>';
+  }
+
+  const html='<div class="kanban-view">'
+    +cols.map(col=>'<div class="kanban-col" id="kcol-'+col.id+'"'
+      +' ondragover="onColDragOver(event,\''+col.id+'\')"'
+      +' ondragleave="onColDragLeave(event)"'
+      +' ondrop="onColDrop(event,\''+col.id+'\')">'
+      +'<div class="kanban-col-header">'
+      +'<span class="kanban-col-dot '+col.dot+'"></span>'
+      +'<span class="kanban-col-title">'+col.label+'</span>'
+      +'<span class="kanban-col-count">'+col.tasks.length+'</span>'
+      +'</div>'
+      +'<div class="kanban-cards" id="cards-'+col.id+'">'
+      +col.tasks.map(t=>cardHTML(t)).join('')
+      +'</div>'
+      +(col.id!=='done'?'<div class="kanban-add-trigger" onclick="openKanbanAdd(\''+col.id+'\')">'
+        +'<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>'
+        +' '+tr('addTask')+'</div>':'')
+      +'</div>'
+    ).join('')
+    +'</div>';
+  area.innerHTML=html;
+  // Update view btns
+  document.getElementById('view-list-btn')?.classList.toggle('active',false);
+  document.getElementById('view-kanban-btn')?.classList.toggle('active',true);
+}
+
+// Kanban drag & drop
+let kDragId=null;
+function onCardDragStart(e,id){kDragId=id;e.dataTransfer.effectAllowed='move';setTimeout(()=>{document.getElementById('kc-'+id)?.classList.add('dragging');},0);}
+function onCardDragEnd(e){document.querySelectorAll('.kanban-card').forEach(c=>c.classList.remove('dragging'));document.querySelectorAll('.kanban-col').forEach(c=>c.classList.remove('drag-over'));}
+function onColDragOver(e,colId){e.preventDefault();document.getElementById('kcol-'+colId)?.classList.add('drag-over');}
+function onColDragLeave(e){e.currentTarget?.classList.remove('drag-over');}
+function onColDrop(e,colId){
+  e.preventDefault();
+  document.querySelectorAll('.kanban-col').forEach(c=>c.classList.remove('drag-over'));
+  if(!kDragId)return;
+  setKanbanStatus(kDragId,colId);
+  kDragId=null;
+}
+
+function openKanbanAdd(status){
+  // Open inline add in the first available list, then re-render
+  if(!state.activeListId&&state.lists.length) state.activeListId=state.lists[0].id;
+  state.inlineAddOpen=true;
+  state.inlineAddPrio='none';
+  state._kanbanAddStatus=status;
+  // Show a quick modal instead for kanban add
+  const listOptions=state.lists.map(l=>'<option value="'+l.id+'"'+(!l.parent_id?'':'')+'>'+esc(l.name)+'</option>').join('');
+  document.getElementById('modal-container').innerHTML='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'
+    +'<h3>'+tr('addTask')+' — '+status.charAt(0).toUpperCase()+status.slice(1).replace('inprogress','In Progress')+'</h3>'
+    +'<div><label>'+tr('nameLabel')+'</label><input id="kanban-add-text" placeholder="'+tr('taskPH')+'" onkeydown="if(event.key===\'Enter\')submitKanbanAdd()"/></div>'
+    +'<div><label>Lijst</label><select id="kanban-add-list" class="list-select">'+listOptions+'</select></div>'
+    +'<div class="modal-row-2">'
+    +'<div><label>'+tr('priorityLabel')+'</label><select id="kanban-add-prio"><option value="none">'+tr('none')+'</option><option value="high">'+tr('high')+'</option><option value="medium">'+tr('medium')+'</option><option value="low">'+tr('low')+'</option></select></div>'
+    +'<div><label>'+tr('deadlineLabel')+'</label><input type="date" id="kanban-add-due"/></div>'
+    +'</div>'
+    +'<div class="modal-actions">'
+    +'<button class="btn-cancel" onclick="closeModal()">'+tr('cancel')+'</button>'
+    +'<button class="btn-primary" onclick="submitKanbanAdd()">'+tr('save')+'</button>'
+    +'</div>'
+    +'</div></div>';
+  setTimeout(()=>document.getElementById('kanban-add-text')?.focus(),50);
+}
+async function submitKanbanAdd(){
+  const text=document.getElementById('kanban-add-text')?.value.trim();
+  if(!text)return;
+  const listId=document.getElementById('kanban-add-list')?.value||state.lists[0]?.id;
+  const prio=document.getElementById('kanban-add-prio')?.value||'none';
+  const due=document.getElementById('kanban-add-due')?.value||null;
+  const status=state._kanbanAddStatus||'todo';
+  closeModal();
+  await createTask(text,prio,due,null,null,null,listId,status);
+  state.viewMode='kanban';
+  renderTasks();
 }
 
 setInterval(async()=>{

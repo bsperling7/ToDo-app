@@ -641,12 +641,6 @@ function toggleTaskExpand(id,e){
   const row=document.getElementById('tr-'+id);
   if(row)row.classList.toggle('expanded',!!state.expandedTasks[id]);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus){
-  const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;t.kanban_status=kanbanStatus||t.kanban_status||'todo';
-  render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||'todo'},prefer:'return=minimal'});
-}
 
 // ── Ctrl+K zoeken ────────────────────────────────────────
 let cmdSelectedIdx=0;

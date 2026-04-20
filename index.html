@@ -918,7 +918,7 @@ function taskHTML(t,showList=false){
   const kStatus=t.kanban_status||'todo';
   const kLabels={todo:'To Do',inprogress:'In Progress',done:'Done'};
   const kNext={todo:'inprogress',inprogress:'done',done:'todo'};
-  const statusBtn='<button class="kanban-status-btn '+kStatus+'" onclick="cycleKanbanStatus(''+t.id+'',event)" title="Status wijzigen">'+kLabels[kStatus]+'</button>';
+  const statusBtn=`<button class="kanban-status-btn ${kStatus}" onclick="cycleKanbanStatus('${t.id}',event)" title="Status wijzigen">${kLabels[kStatus]}</button>`;
   const isToday=todayTasks.has(String(t.id));
   const todayBtn=!t.done?`<button class="task-today-toggle ${isToday?'is-today':''}" id="today-btn-${t.id}" onclick="toggleToday('${t.id}',event)" title="${isToday?tr('removeToday'):tr('addToday')}" style="${isToday?'opacity:1':''}"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="10" height="9" rx="1"/><line x1="4" y1="1" x2="4" y2="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="1" y1="5" x2="11" y2="5"/></svg></button>`:'';  return `<div class="task-row ${t.done?'done':''} ${isExpanded?'expanded':''}" id="tr-${t.id}">
     ${expandBtn||'<span style="width:20px;flex-shrink:0"></span>'}
@@ -940,39 +940,46 @@ function taskHTML(t,showList=false){
 }
 function globalAddHTML(){
   if(!state.globalView)return '';
+  if(!state.globalAddOpen){
+    return `<div class="inline-add-trigger" onclick="openGlobalAdd()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+      ${tr('addTask')}
+    </div>`;
+  }
   const pillClass={none:'',high:'selected-high',medium:'selected-medium',low:'selected-low'};
   const pillLabel={none:tr('noPrio'),high:tr('high'),medium:tr('medium'),low:tr('low')};
   const cur=state.inlineAddPrio||'none';
   const prios=['none','high','medium','low'];
-  if(state.globalAddOpen){
-    const listOptions=state.lists.filter(l=>!l.parent_id).map(l=>'<option value="'+l.id+'"'+(l.id===state.globalAddListId?' selected':'')+'>'+(l.name||'')+'</option>').join('');
-    const subLists=state.lists.filter(l=>l.parent_id).map(l=>'<option value="'+l.id+'">'+(state.lists.find(p=>p.id===l.parent_id)?.name||'')+' / '+l.name+'</option>').join('');
-    return '<div class="global-add-form" id="global-add-form">'
-      +'<select class="list-select" id="global-task-list">'+listOptions+subLists+'</select>'
-      +'<input class="inline-add-input" id="global-task-text" placeholder="'+tr('taskPH')+'" onkeydown="if(event.key==='Enter')submitGlobalTask();if(event.key==='Escape')closeGlobalAdd()"/>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +'<input type="date" id="global-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;" title="'+tr('deadlineLabel')+'"/>'
-      +'<input id="global-task-waiting" placeholder="'+tr('waitingShort')+'" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:120px;"/>'
-      +'<select id="global-task-ibp" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;">'
-      +'<option value="none">IBP...</option>'
-      +'<option value="impact">'+tr('ibpImpact')+'</option>'
-      +'<option value="blocker">'+tr('ibpBlocker')+'</option>'
-      +'<option value="priority">'+tr('ibpPriority')+'</option>'
-      +'</select>'
-      +'</div>'
-      +'<div class="inline-add-footer">'
-      +prios.map(p=>'<button class="prio-pill '+(cur===p&&pillClass[p]?pillClass[p]:'')+'" onclick="setInlinePrio(''+p+'')">'+pillLabel[p]+'</button>').join('')
-      +'<div class="inline-add-actions">'
-      +'<button class="btn-discard" onclick="closeGlobalAdd()">'+tr('cancel')+'</button>'
-      +'<button class="btn-save" onclick="submitGlobalTask()">'+tr('save')+'</button>'
-      +'</div></div>'
-      +'</div>';
-  }
-  return '<div class="inline-add-trigger" onclick="openGlobalAdd()">'
-    +'<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>'
-    +tr('addTask')
-    +'</div>';
+  const allLists=[...state.lists.filter(l=>!l.parent_id),...state.lists.filter(l=>l.parent_id)];
+  const listOpts=allLists.map(l=>{
+    const parent=l.parent_id?state.lists.find(p=>p.id===l.parent_id):null;
+    const label=parent?parent.name+' / '+l.name:l.name;
+    const sel=l.id===state.globalAddListId?' selected':'';
+    return '<option value="'+l.id+'"'+sel+'>'+esc(label)+'</option>';
+  }).join('');
+  return `<div class="global-add-form" id="global-add-form">
+    <select class="list-select" id="global-task-list">${listOpts}</select>
+    <input class="inline-add-input" id="global-task-text" placeholder="${tr('taskPH')}" onkeydown="if(event.key==='Enter')submitGlobalTask();if(event.key==='Escape')closeGlobalAdd()"/>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="date" id="global-task-due" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;"/>
+      <input id="global-task-waiting" placeholder="${tr('waitingShort')}" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;width:110px;"/>
+      <select id="global-task-ibp" style="font-size:11px;padding:3px 8px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-primary);color:var(--text-secondary);font-family:var(--font);outline:none;">
+        <option value="none">IBP...</option>
+        <option value="impact">${tr('ibpImpact')}</option>
+        <option value="blocker">${tr('ibpBlocker')}</option>
+        <option value="priority">${tr('ibpPriority')}</option>
+      </select>
+    </div>
+    <div class="inline-add-footer">
+      ${prios.map(p=>`<button class="prio-pill ${cur===p&&pillClass[p]?pillClass[p]:''}" onclick="setInlinePrio('${p}')">${pillLabel[p]}</button>`).join('')}
+      <div class="inline-add-actions">
+        <button class="btn-discard" onclick="closeGlobalAdd()">${tr('cancel')}</button>
+        <button class="btn-save" onclick="submitGlobalTask()">${tr('save')}</button>
+      </div>
+    </div>
+  </div>`;
 }
+
 function inlineAddHTML(){
   if(state.globalView||!state.activeListId)return '';
   if(state.inlineAddOpen){

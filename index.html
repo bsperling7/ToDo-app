@@ -38,19 +38,17 @@
   --accent:#6B8BFF;
   --accent-soft:#1e2340;
 }
-[data-theme="vibrant"]{
-  --bg-primary:#0f0e17;
-  --bg-secondary:#1a1830;
-  --bg-tertiary:#231f3a;
-  --text-primary:#fffffe;
-  --text-secondary:#a7a9be;
-  --text-tertiary:#6b6d8a;
-  --border-light:rgba(255,140,0,0.12);
-  --border-mid:rgba(255,140,0,0.25);
-  --accent:#ff8c00;
-  --accent-soft:#2a1f0a;
-  --radius-md:10px;
-  --radius-lg:16px;
+[data-theme="navy"]{
+  --bg-primary:#0e1c2f;
+  --bg-secondary:#152236;
+  --bg-tertiary:#1c2d43;
+  --text-primary:#ddeeff;
+  --text-secondary:#7a9ab8;
+  --text-tertiary:#3d5a78;
+  --border-light:rgba(77,166,255,0.12);
+  --border-mid:rgba(77,166,255,0.24);
+  --accent:#4da6ff;
+  --accent-soft:#0a1e33;
 }
 [data-theme="light"]{
   --bg-primary:#ffffff;
@@ -126,8 +124,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .sublists.collapsed{display:none;}
 .add-sublist-btn{display:none;align-items:center;gap:5px;padding:4px 8px 4px 10px;border-radius:var(--radius-md);cursor:pointer;font-size:11px;color:var(--text-tertiary);border:none;background:none;width:100%;text-align:left;font-family:var(--font);}
 .add-sublist-btn:hover{color:var(--text-secondary);background:var(--bg-primary);}
-.list-group:hover>.sublists>.add-sublist-btn{display:flex;}
-.list-item:hover~.sublists>.add-sublist-btn{display:flex;}
+.list-group:hover .add-sublist-btn{display:flex;}
 .global-filters{padding:6px 8px 2px;}
 .global-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-md);cursor:pointer;font-size:13px;color:var(--text-secondary);border:0.5px solid transparent;background:none;width:100%;text-align:left;transition:background .1s;}
 .global-item:hover{background:var(--bg-primary);color:var(--text-primary);}
@@ -156,9 +153,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 .ibp-impact{background:#fff3cd;color:#856404;}
 .ibp-blocker{background:#2d0000;color:#ff5555;}
 .ibp-priority{background:#e8f0fe;color:#1a56db;}
-[data-theme="dark"] .ibp-blocker,[data-theme="vibrant"] .ibp-blocker{background:#3d0505;color:#ff7777;}
-[data-theme="dark"] .ibp-impact,[data-theme="vibrant"] .ibp-impact{background:#3a2e00;color:#ffd760;}
-[data-theme="dark"] .ibp-priority,[data-theme="vibrant"] .ibp-priority{background:#1a2040;color:#a78bfa;}
+[data-theme="dark"] .ibp-blocker,[data-theme="navy"] .ibp-blocker{background:#3d0505;color:#ff7777;}
+[data-theme="dark"] .ibp-impact,[data-theme="navy"] .ibp-impact{background:#3a2e00;color:#ffd760;}
+[data-theme="dark"] .ibp-priority,[data-theme="navy"] .ibp-priority{background:#1a2040;color:#a78bfa;}
 .task-today-toggle:hover{color:#F59E0B;}
 .task-today-toggle.is-today{color:#F59E0B;}
 .cmd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding-top:15vh;}
@@ -273,7 +270,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 
 /* ── Jira ── */
 .jira-badge{font-size:10px;display:inline-flex;align-items:center;gap:3px;color:#0052CC;background:#E8F0FE;padding:1px 6px;border-radius:8px;font-weight:500;}
-[data-theme="dark"] .jira-badge,[data-theme="vibrant"] .jira-badge{color:#a78bfa;background:#1a1535;}
+[data-theme="dark"] .jira-badge,[data-theme="navy"] .jira-badge{color:#a78bfa;background:#1a1535;}
 .jira-modal{width:420px;}
 .btn-jira{background:#0052CC !important;}
 .btn-green{background:#1D9E75 !important;}
@@ -292,15 +289,15 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
 
 /* ── Kanban ── */
 .kanban-view{display:flex;gap:12px;padding:12px 20px;overflow-x:auto;height:100%;align-items:flex-start;}
-.kanban-col{flex:0 0 290px;background:var(--bg-secondary);border-radius:14px;border:1px solid var(--border-light);display:flex;flex-direction:column;max-height:calc(100vh - 180px);}
-.kanban-col-header{padding:12px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:0.5px solid var(--border-light);flex-shrink:0;}
+.kanban-col{flex:0 0 290px;background:var(--bg-tertiary);border-radius:14px;border:1px solid var(--border-light);display:flex;flex-direction:column;max-height:calc(100vh - 180px);}
+.kanban-col-header{padding:12px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-light);flex-shrink:0;}
 .kanban-col-title{font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em;flex:1;}
 .kanban-col-count{font-size:11px;color:var(--text-tertiary);background:var(--bg-tertiary);padding:1px 7px;border-radius:10px;}
 .kanban-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .dot-todo{background:#9196b0;}
 .dot-inprogress{background:#BA7517;}
 .dot-done{background:#1D9E75;}
-.kanban-cards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.kanban-cards{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:8px;}
 .kanban-card{background:var(--bg-primary);border:1px solid var(--border-light);border-radius:12px;padding:12px 14px;cursor:grab;transition:all .2s;user-select:none;position:relative;overflow:hidden;}
 .kanban-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:0;transition:opacity .2s;border-radius:3px 0 0 3px;}
 .kanban-card:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(0,0,0,.10);transform:translateY(-1px);}
@@ -349,7 +346,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-tertiary);colo
         <div class="sidebar-controls">
           <div class="sync-dot" id="sync-dot"></div>
           <button class="lang-switch" id="lang-switch" onclick="toggleLang()">NL</button>
-          <button class="theme-cycle-btn" id="theme-cycle-btn" onclick="toggleTheme()" title="Thema wisselen">☀</button>
+          <button class="theme-cycle-btn" id="theme-cycle-btn" onclick="toggleTheme()" title="Thema wisselen (licht / donker / navy)">☀</button>
         </div>
       </div>
     </div>
@@ -481,8 +478,8 @@ let selectedColor=COLORS[0];
 let dragSrcId=null,dragOverId=null;
 
 // Theme
-const THEMES = ['light','dark','vibrant'];
-const THEME_ICONS = {light:'☀',dark:'☾',vibrant:'✦'};
+const THEMES = ['light','dark','navy'];
+const THEME_ICONS = {light:'☀',dark:'☾',navy:'⚓'};
 let currentTheme = localStorage.getItem('theme') || 'light';
 if(!THEMES.includes(currentTheme)) currentTheme = 'light';
 function applyTheme(){

@@ -2511,9 +2511,13 @@ async function startEmailImport(){
 
 // ── Clear completed tasks ──────────────────────────────
 let _clearActivePeriod = 'all';
+let _clearActiveTab = 'period'; // 'period' | 'list'
+let _clearActiveList = null;
 
 function openClearCompletedModal(){
   _clearActivePeriod = 'all';
+  _clearActiveTab = 'period';
+  _clearActiveList = null;
   renderClearModal();
 }
 
@@ -2526,36 +2530,98 @@ function renderClearModal(){
     year:  new Date(now - 864e5*365),
     all:   null
   };
-  const labels = {day:'Last day',week:'Last week',month:'Last month',year:'Last year',all:'All'};
-  const cutoff = cutoffs[_clearActivePeriod];
+  const periodLabels = {day:'Last day',week:'Last week',month:'Last month',year:'Last year',all:'All'};
 
-  // Get completed tasks for current period, sorted newest first
-  const doneTasks = state.tasks.filter(t=>{
-    if(!t.done) return false;
-    if(!cutoff) return true;
-    return new Date(t.created_at||0) >= cutoff;
-  }).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
-
-  const filterBtns = Object.entries(labels).map(([k,l])=>{
-    const cnt = state.tasks.filter(t=>{
+  // ── Period tab content ──
+  function periodContent(){
+    const cutoff = cutoffs[_clearActivePeriod];
+    const doneTasks = state.tasks.filter(t=>{
       if(!t.done) return false;
-      const co = cutoffs[k];
-      if(!co) return true;
-      return new Date(t.created_at||0) >= co;
-    }).length;
-    return `<button class="clear-filter-btn ${_clearActivePeriod===k?'active':''}" onclick="_clearActivePeriod='${k}';renderClearModal()">${l} <span style="opacity:.7">(${cnt})</span></button>`;
-  }).join('');
+      if(!cutoff) return true;
+      return new Date(t.created_at||0) >= cutoff;
+    }).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
 
-  const taskRows = doneTasks.map(t=>{
-    const list = state.lists.find(l=>l.id===t.list_id);
-    const d = t.created_at ? new Date(t.created_at).toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'short'}) : '';
-    return `<label class="clear-task-item">
-      <input type="checkbox" class="clear-cb" value="${t.id}" checked onchange="updateClearCount()"/>
-      <span class="ct-text" title="${esc(t.text)}">${esc(t.text)}</span>
-      ${list?`<span class="ct-list"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block"></span>${esc(list.name)}</span>`:''}
-      <span class="ct-date">${d}</span>
-    </label>`;
-  }).join('');
+    const filterBtns = Object.entries(periodLabels).map(([k,l])=>{
+      const cnt = state.tasks.filter(t=>{
+        if(!t.done) return false;
+        const co = cutoffs[k];
+        return co ? new Date(t.created_at||0)>=co : true;
+      }).length;
+      return `<button class="clear-filter-btn ${_clearActivePeriod===k?'active':''}" onclick="_clearActivePeriod='${k}';renderClearModal()">${l} <span style="opacity:.7">(${cnt})</span></button>`;
+    }).join('');
+
+    const rows = doneTasks.map(t=>{
+      const list = state.lists.find(l=>l.id===t.list_id);
+      const d = t.created_at ? new Date(t.created_at).toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'short'}) : '';
+      return `<label class="clear-task-item">
+        <input type="checkbox" class="clear-cb" value="${t.id}" checked onchange="updateClearCount()"/>
+        <span class="ct-text" title="${esc(t.text)}">${esc(t.text)}</span>
+        ${list?`<span class="ct-list"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block"></span>${esc(list.name)}</span>`:''}
+        <span class="ct-date">${d}</span>
+      </label>`;
+    }).join('');
+
+    return `<div class="clear-filters" style="margin-bottom:6px">${filterBtns}</div>
+      <div class="clear-select-bar">
+        <span id="clear-count-label">${doneTasks.length} selected</span>
+        <div style="display:flex;gap:8px">
+          <button onclick="setClearAll(true)">Select all</button>
+          <button onclick="setClearAll(false)">Deselect all</button>
+        </div>
+      </div>
+      <div class="clear-task-list" id="clear-task-list">
+        ${rows||`<div class="clear-empty">No completed tasks in this period</div>`}
+      </div>`;
+  }
+
+  // ── List tab content ──
+  function listContent(){
+    // Build list of lists that have completed tasks
+    function flatL(lists){
+      const res=[];const top=lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
+      function walk(l,d){res.push({...l,depth:d});lists.filter(c=>c.parent_id===l.id).sort((a,b)=>a.position-b.position).forEach(c=>walk(c,d+1));}
+      top.forEach(l=>walk(l,0));return res;
+    }
+    const allLists = flatL(state.lists);
+    // Set default list if not set
+    if(!_clearActiveList && allLists.length) _clearActiveList = allLists[0].id;
+
+    const listBtns = allLists.map(l=>{
+      const cnt = state.tasks.filter(t=>t.done&&t.list_id===l.id).length;
+      const indent = '&nbsp;'.repeat(l.depth*3);
+      return `<button class="clear-filter-btn ${_clearActiveList===l.id?'active':''}" onclick="_clearActiveList='${l.id}';renderClearModal()" style="display:flex;align-items:center;gap:5px">
+        <span style="width:7px;height:7px;border-radius:50%;background:${l.color};flex-shrink:0;display:inline-block"></span>
+        ${indent}${esc(l.name)} <span style="opacity:.7">(${cnt})</span>
+      </button>`;
+    }).join('');
+
+    const doneTasks = _clearActiveList
+      ? state.tasks.filter(t=>t.done&&t.list_id===_clearActiveList).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))
+      : [];
+
+    const rows = doneTasks.map(t=>{
+      const d = t.created_at ? new Date(t.created_at).toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'short'}) : '';
+      return `<label class="clear-task-item">
+        <input type="checkbox" class="clear-cb" value="${t.id}" checked onchange="updateClearCount()"/>
+        <span class="ct-text" title="${esc(t.text)}">${esc(t.text)}</span>
+        <span class="ct-date">${d}</span>
+      </label>`;
+    }).join('');
+
+    return `<div class="clear-filters" style="margin-bottom:6px;flex-wrap:wrap">${listBtns}</div>
+      <div class="clear-select-bar">
+        <span id="clear-count-label">${doneTasks.length} selected</span>
+        <div style="display:flex;gap:8px">
+          <button onclick="setClearAll(true)">Select all</button>
+          <button onclick="setClearAll(false)">Deselect all</button>
+        </div>
+      </div>
+      <div class="clear-task-list" id="clear-task-list">
+        ${rows||`<div class="clear-empty">No completed tasks in this list</div>`}
+      </div>`;
+  }
+
+  const tabStyle = active => `padding:5px 14px;border-radius:var(--radius-xl);border:none;font-family:var(--font);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .1s;${active?'background:var(--bg-tertiary);color:var(--text-primary);':'background:none;color:var(--text-tertiary);'}`;
 
   document.getElementById('modal-container').innerHTML=`
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
@@ -2564,22 +2630,14 @@ function renderClearModal(){
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 13,3"/><path d="M4,3V2h6v1"/><rect x="2" y="3" width="10" height="10" rx="1"/></svg>
       Clear completed
     </h3>
-    <div class="clear-filters">${filterBtns}</div>
-    <div class="clear-select-bar">
-      <span id="clear-count-label">${doneTasks.length} selected</span>
-      <div style="display:flex;gap:8px">
-        <button onclick="setClearAll(true)">Select all</button>
-        <button onclick="setClearAll(false)">Deselect all</button>
-      </div>
+    <div style="display:flex;gap:2px;background:var(--bg-secondary);border-radius:var(--radius-xl);padding:3px;width:fit-content">
+      <button style="${tabStyle(_clearActiveTab==='period')}" onclick="_clearActiveTab='period';renderClearModal()">By period</button>
+      <button style="${tabStyle(_clearActiveTab==='list')}" onclick="_clearActiveTab='list';renderClearModal()">By list</button>
     </div>
-    <div class="clear-task-list" id="clear-task-list">
-      ${taskRows || `<div class="clear-empty">No completed tasks in this period</div>`}
-    </div>
+    ${_clearActiveTab==='period' ? periodContent() : listContent()}
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary btn-danger" id="clear-confirm-btn" onclick="confirmClearCompleted()">
-        Delete selected
-      </button>
+      <button class="btn-primary btn-danger" id="clear-confirm-btn" onclick="confirmClearCompleted()">Delete selected</button>
     </div>
   </div></div>`;
 
@@ -2606,7 +2664,6 @@ async function confirmClearCompleted(){
   closeModal();
   state.tasks = state.tasks.filter(t=>!ids.includes(String(t.id)));
   render();
-  // Delete from Supabase in chunks of 50
   for(let i=0; i<ids.length; i+=50){
     const chunk = ids.slice(i,i+50);
     await sb(`tasks?id=in.(${chunk.join(',')})`,{method:'DELETE',prefer:'return=minimal'});

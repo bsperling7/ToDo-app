@@ -545,7 +545,41 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
 .modal.modal-wide{width:420px;}
-/* Multi-list picklist */
+/* Clear completed modal */
+.clear-modal{width:460px !important;}
+.clear-filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:2px;}
+.clear-filter-btn{
+  font-size:11.5px;padding:3px 11px;border-radius:var(--radius-xl);
+  border:1.5px solid var(--border);background:none;
+  color:var(--text-secondary);cursor:pointer;font-family:var(--font);font-weight:500;transition:all .1s;
+}
+.clear-filter-btn:hover{border-color:#dc2626;color:#dc2626;}
+.clear-filter-btn.active{background:#dc2626;color:#fff;border-color:#dc2626;}
+.clear-task-list{
+  display:flex;flex-direction:column;gap:2px;
+  max-height:280px;overflow-y:auto;
+  border:1.5px solid var(--border);border-radius:var(--radius-md);
+  background:var(--bg-secondary);
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.clear-task-item{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;cursor:pointer;transition:background .08s;
+  border-bottom:1px solid var(--border-light);
+}
+.clear-task-item:last-child{border-bottom:none;}
+.clear-task-item:hover{background:var(--bg-hover);}
+.clear-task-item input[type=checkbox]{
+  width:14px;height:14px;flex-shrink:0;cursor:pointer;accent-color:#dc2626;
+}
+.clear-task-item .ct-text{flex:1;font-size:12.5px;color:var(--text-primary);text-decoration:line-through;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.clear-task-item .ct-list{font-size:10.5px;color:var(--text-tertiary);flex-shrink:0;display:flex;align-items:center;gap:3px;}
+.clear-task-item .ct-date{font-size:10.5px;color:var(--text-tertiary);flex-shrink:0;}
+.clear-select-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 2px;}
+.clear-select-bar span{font-size:12px;color:var(--text-secondary);}
+.clear-select-bar button{font-size:11.5px;color:var(--cw-coral);background:none;border:none;cursor:pointer;font-family:var(--font);font-weight:500;padding:2px 4px;}
+.clear-select-bar button:hover{text-decoration:underline;}
+.clear-empty{padding:20px;text-align:center;font-size:12.5px;color:var(--text-tertiary);}
 .list-picklist{
   display:flex;flex-direction:column;gap:4px;
   max-height:160px;overflow-y:auto;
@@ -730,9 +764,9 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>
         Weekoverzicht
       </button>
-      <button class="add-list-btn highlight" onclick="openIBPExport()">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><line x1="7" y1="4" x2="7" y2="7"/><circle cx="7" cy="10" r="0.8" fill="currentColor" stroke="none"/></svg>
-        IBP rapport exporteren
+      <button class="add-list-btn" onclick="openClearCompletedModal()" style="color:rgba(220,80,80,.7);">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 13,3"/><path d="M4,3V2h6v1"/><rect x="2" y="3" width="10" height="10" rx="1"/><line x1="5" y1="6" x2="5" y2="10"/><line x1="9" y1="6" x2="9" y2="10"/></svg>
+        Clear completed
       </button>
     </div>
     <div class="version-bar">
@@ -2469,6 +2503,111 @@ async function startEmailImport(){
     closeModal();return;
   }
   showPreview(tasks);
+}
+
+// ── Clear completed tasks ──────────────────────────────
+let _clearActivePeriod = 'all';
+
+function openClearCompletedModal(){
+  _clearActivePeriod = 'all';
+  renderClearModal();
+}
+
+function renderClearModal(){
+  const now = new Date();
+  const cutoffs = {
+    day:   new Date(now - 864e5),
+    week:  new Date(now - 864e5*7),
+    month: new Date(now - 864e5*30),
+    year:  new Date(now - 864e5*365),
+    all:   null
+  };
+  const labels = {day:'Last day',week:'Last week',month:'Last month',year:'Last year',all:'All'};
+  const cutoff = cutoffs[_clearActivePeriod];
+
+  // Get completed tasks for current period, sorted newest first
+  const doneTasks = state.tasks.filter(t=>{
+    if(!t.done) return false;
+    if(!cutoff) return true;
+    return new Date(t.created_at||0) >= cutoff;
+  }).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+
+  const filterBtns = Object.entries(labels).map(([k,l])=>{
+    const cnt = state.tasks.filter(t=>{
+      if(!t.done) return false;
+      const co = cutoffs[k];
+      if(!co) return true;
+      return new Date(t.created_at||0) >= co;
+    }).length;
+    return `<button class="clear-filter-btn ${_clearActivePeriod===k?'active':''}" onclick="_clearActivePeriod='${k}';renderClearModal()">${l} <span style="opacity:.7">(${cnt})</span></button>`;
+  }).join('');
+
+  const taskRows = doneTasks.map(t=>{
+    const list = state.lists.find(l=>l.id===t.list_id);
+    const d = t.created_at ? new Date(t.created_at).toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'short'}) : '';
+    return `<label class="clear-task-item">
+      <input type="checkbox" class="clear-cb" value="${t.id}" checked onchange="updateClearCount()"/>
+      <span class="ct-text" title="${esc(t.text)}">${esc(t.text)}</span>
+      ${list?`<span class="ct-list"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block"></span>${esc(list.name)}</span>`:''}
+      <span class="ct-date">${d}</span>
+    </label>`;
+  }).join('');
+
+  document.getElementById('modal-container').innerHTML=`
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal clear-modal">
+    <h3 style="display:flex;align-items:center;gap:7px">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,3 13,3"/><path d="M4,3V2h6v1"/><rect x="2" y="3" width="10" height="10" rx="1"/></svg>
+      Clear completed
+    </h3>
+    <div class="clear-filters">${filterBtns}</div>
+    <div class="clear-select-bar">
+      <span id="clear-count-label">${doneTasks.length} selected</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="setClearAll(true)">Select all</button>
+        <button onclick="setClearAll(false)">Deselect all</button>
+      </div>
+    </div>
+    <div class="clear-task-list" id="clear-task-list">
+      ${taskRows || `<div class="clear-empty">No completed tasks in this period</div>`}
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary btn-danger" id="clear-confirm-btn" onclick="confirmClearCompleted()">
+        Delete selected
+      </button>
+    </div>
+  </div></div>`;
+
+  updateClearCount();
+}
+
+function updateClearCount(){
+  const checked = document.querySelectorAll('.clear-cb:checked');
+  const label = document.getElementById('clear-count-label');
+  if(label) label.textContent = `${checked.length} selected`;
+  const btn = document.getElementById('clear-confirm-btn');
+  if(btn){ btn.disabled=checked.length===0; btn.style.opacity=checked.length?'1':'.4'; }
+}
+
+function setClearAll(val){
+  document.querySelectorAll('.clear-cb').forEach(cb=>cb.checked=val);
+  updateClearCount();
+}
+
+async function confirmClearCompleted(){
+  const checked = [...document.querySelectorAll('.clear-cb:checked')];
+  const ids = checked.map(cb=>cb.value);
+  if(!ids.length) return;
+  closeModal();
+  state.tasks = state.tasks.filter(t=>!ids.includes(String(t.id)));
+  render();
+  // Delete from Supabase in chunks of 50
+  for(let i=0; i<ids.length; i+=50){
+    const chunk = ids.slice(i,i+50);
+    await sb(`tasks?id=in.(${chunk.join(',')})`,{method:'DELETE',prefer:'return=minimal'});
+  }
+  showToast(`${ids.length} task${ids.length!==1?'s':''} deleted`);
 }
 
 // ── Sidebar resize ──────────────────────────────

@@ -120,13 +120,26 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
    SIDEBAR  — always dark, CW.com nav feel
 ══════════════════════════════════════════════ */
 #sidebar{
-  width:244px;min-width:244px;max-width:244px;flex-shrink:0;
+  width:244px;min-width:180px;max-width:440px;flex-shrink:0;
   background:var(--sb-bg);
   border-right:1px solid var(--sb-border);
   display:flex;flex-direction:column;overflow:hidden;
-  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  transition:none;
   position:relative;z-index:10;
 }
+/* Resize handle */
+#sidebar-resize{
+  position:absolute;right:-4px;top:0;bottom:0;width:8px;
+  cursor:col-resize;z-index:30;
+}
+#sidebar-resize::after{
+  content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:2px;height:40px;border-radius:2px;
+  background:rgba(255,255,255,.12);transition:all .15s;
+}
+#sidebar-resize:hover::after{background:var(--cw-coral);height:60px;}
+body.sb-resizing{cursor:col-resize !important;user-select:none !important;}
+body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 /* Coral gradient top-line — signature CW brand detail */
 #sidebar::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
@@ -614,6 +627,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
 <div id="app">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div id="sidebar">
+    <div id="sidebar-resize" id="sb-resize-handle"></div>
     <div class="sb-header">
       <div class="cw-brand">
         <!-- CaseWare omega mark: coral stroke on dark, matches caseware.com -->
@@ -704,21 +718,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
     </div>
     <div class="version-bar">
       <span class="version-label">v1.3</span>
-      <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i<div class="rn-tooltip">
-          <div class="rn-tooltip-version">v1.3 <span class="rn-tooltip-badge">Latest</span></div>
-          <div class="rn-tooltip-date">2026-05-04</div>
-          <div class="rn-tooltip-item">Real CaseWare brand — omega mark + gradient</div>
-          <div class="rn-tooltip-item">Premium dark interface with neon accents</div>
-          <div class="rn-tooltip-item">Release notes tooltip on hover</div>
-          <div style="border-top:1px solid rgba(255,255,255,.1);margin:8px 0 6px"></div>
-          <div class="rn-tooltip-version" style="font-size:11px;color:rgba(255,255,255,.5);font-weight:500">v1.1 · 2026-04-17</div>
-          <div class="rn-tooltip-item">Jira MCP · IBP rapport · Kanban · Excel/PDF export</div>
-          <div class="rn-tooltip-item">Recurring tasks · Bilingual NL/EN · 3 themes</div>
-        </div>
-      </button>
+      <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
-  </div>
-  </div>
   </div>
   <div id="wrapper">
     <div id="topbar">
@@ -2341,6 +2342,33 @@ async function startEmailImport(){
   }
   showPreview(tasks);
 }
+
+// ── Sidebar resize ──────────────────────────────
+(function(){
+  const handle=document.getElementById('sidebar-resize');
+  const sidebar=document.getElementById('sidebar');
+  if(!handle||!sidebar)return;
+  let startX,startW;
+  const saved=parseInt(localStorage.getItem('sb_w'));
+  if(saved>=180&&saved<=440)sidebar.style.width=saved+'px';
+  handle.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    startX=e.clientX;startW=sidebar.getBoundingClientRect().width;
+    document.body.classList.add('sb-resizing');
+    const move=e=>{
+      const w=Math.min(440,Math.max(180,startW+(e.clientX-startX)));
+      sidebar.style.width=w+'px';
+    };
+    const up=()=>{
+      document.body.classList.remove('sb-resizing');
+      localStorage.setItem('sb_w',parseInt(sidebar.style.width)||startW);
+      document.removeEventListener('mousemove',move);
+      document.removeEventListener('mouseup',up);
+    };
+    document.addEventListener('mousemove',move);
+    document.addEventListener('mouseup',up);
+  });
+})();
 
 loadAll();
 

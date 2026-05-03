@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Taken · caseware</title>
+<title>Taken - caseware</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23121212'/%3E%3Cpath fill='%23f0645e' d='M16 4C9.4 4 4 9.4 4 16c0 3.5 1.4 6.6 3.6 8.9l2.6-3.7C8.8 19.6 8 17.9 8 16c0-4.4 3.6-8 8-8s8 3.6 8 8c0 1.9-.7 3.6-1.8 5l2.6 3.7C26.6 22.6 28 19.5 28 16c0-6.6-5.4-12-12-12zm0 9l-6.5 9.2 2.5 1.8L16 18l4 6 2.5-1.8L16 13z'/%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111111'/%3E%3Cg fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22 A11 11 0 1 1 26 22'/%3E%3Cpath d='M6 22 L16 12 L26 22'/%3E%3C/g%3E%3C/svg%3E"/>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#ffffff"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -155,7 +155,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 .cw-brand{display:flex;align-items:center;gap:9px;}
 
 /* Real CW omega mark: coral-to-blue gradient, small & crisp */
-.cw-mark-svg{width:26px;height:26px;flex-shrink:0;}
+.cw-mark-svg{width:28px;height:28px;flex-shrink:0;border-radius:6px;}
 
 .cw-name{
   font-size:15px;font-weight:600;letter-spacing:-.025em;
@@ -630,21 +630,13 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
     <div id="sidebar-resize" id="sb-resize-handle"></div>
     <div class="sb-header">
       <div class="cw-brand">
-        <!-- CaseWare omega mark: coral stroke on dark, matches caseware.com -->
-        <svg class="cw-mark-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="cwG" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#f0645e"/>
-              <stop offset="48%" stop-color="#ff647a"/>
-              <stop offset="100%" stop-color="#1c4dff"/>
-            </linearGradient>
-          </defs>
-          <!-- Outer arc -->
-          <path fill="none" stroke="url(#cwG)" stroke-width="10" stroke-linecap="round"
-            d="M 15 62 A 37 37 0 1 1 85 62"/>
-          <!-- Inner V legs -->
-          <path fill="none" stroke="url(#cwG)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"
-            d="M 15 62 L 50 30 L 85 62"/>
+        <!-- CaseWare omega mark — matches the tab favicon: dark bg, white omega -->
+        <svg class="cw-mark-svg" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="7" fill="#111111"/>
+          <g fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 22 A11 11 0 1 1 26 22"/>
+            <path d="M6 22 L16 12 L26 22"/>
+          </g>
         </svg>
         <span class="cw-name">caseware<span>.</span></span>
       </div>

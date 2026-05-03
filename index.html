@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Taken - caseware</title>
+<title>Tasks - caseware</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -20,11 +20,11 @@
   --font:'Figtree',system-ui,-apple-system,sans-serif;
   --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--radius-xl:20px;
   /* CW Brand */
-  --cw-coral:#f0645e;--cw-coral-dark:#d94f49;
-  --cw-pink:#ff647a;
+  --cw-coral:#00a878;--cw-coral-dark:#008f65;
+  --cw-pink:#00b38a;
   --cw-blue:#1c4dff;--cw-blue-dark:#1540e0;
-  --cw-grad:linear-gradient(135deg,#f0645e 0%,#ff647a 45%,#1c4dff 100%);
-  --cw-grad-h:linear-gradient(135deg,#d94f49 0%,#e8536a 45%,#1540e0 100%);
+  --cw-grad:linear-gradient(135deg,#00a878 0%,#00c48f 45%,#1c4dff 100%);
+  --cw-grad-h:linear-gradient(135deg,#008f65 0%,#00a878 45%,#1540e0 100%);
 }
 
 /* ── LIGHT THEME (CaseWare.com look) ── */
@@ -48,12 +48,12 @@
   --sb-border:rgba(255,255,255,.07);
   --sb-text:rgba(255,255,255,.65);
   --sb-text-dim:rgba(255,255,255,.3);
-  --sb-active-bg:rgba(255,100,122,.14);
-  --sb-active:#ff8a9a;
-  --sb-active-border:rgba(255,100,122,.3);
+  --sb-active-bg:rgba(0,168,120,.14);
+  --sb-active:#00c48f;
+  --sb-active-border:rgba(0,168,120,.3);
   --sb-hover:rgba(255,255,255,.06);
   --sb-btn:rgba(255,255,255,.42);
-  --sb-btn-hl:#ff8a9a;
+  --sb-btn-hl:#00d4a0;
 }
 
 /* ── DARK THEME ── */
@@ -68,20 +68,20 @@
   --text-tertiary:#464c6e;
   --text-muted:#2d3047;
   --border:#232538;
-  --border-focus:#ff647a;
-  --accent:var(--cw-pink);
-  --accent-soft:rgba(255,100,122,.1);
-  --accent-text:#ff8a9a;
+  --border-focus:#00a878;
+  --accent:var(--cw-coral);
+  --accent-soft:rgba(0,168,120,.1);
+  --accent-text:#00d4a0;
   --sb-bg:#0a0b10;
   --sb-border:rgba(255,255,255,.06);
   --sb-text:rgba(255,255,255,.62);
   --sb-text-dim:rgba(255,255,255,.28);
-  --sb-active-bg:rgba(255,100,122,.12);
-  --sb-active:#ff8a9a;
-  --sb-active-border:rgba(255,100,122,.28);
+  --sb-active-bg:rgba(0,168,120,.14);
+  --sb-active:#00d4a0;
+  --sb-active-border:rgba(0,168,120,.28);
   --sb-hover:rgba(255,255,255,.05);
   --sb-btn:rgba(255,255,255,.38);
-  --sb-btn-hl:#ff8a9a;
+  --sb-btn-hl:#00d4a0;
 }
 
 /* ── NAVY THEME ── */
@@ -96,20 +96,20 @@
   --text-tertiary:rgba(255,255,255,.3);
   --text-muted:rgba(255,255,255,.12);
   --border:rgba(255,255,255,.1);
-  --border-focus:#ff647a;
-  --accent:var(--cw-pink);
-  --accent-soft:rgba(255,100,122,.15);
-  --accent-text:#ff8a9a;
+  --border-focus:#00a878;
+  --accent:var(--cw-coral);
+  --accent-soft:rgba(0,168,120,.15);
+  --accent-text:#00d4a0;
   --sb-bg:#080d25;
   --sb-border:rgba(255,255,255,.07);
   --sb-text:rgba(255,255,255,.65);
   --sb-text-dim:rgba(255,255,255,.28);
-  --sb-active-bg:rgba(255,100,122,.15);
-  --sb-active:#ff8a9a;
-  --sb-active-border:rgba(255,100,122,.3);
+  --sb-active-bg:rgba(0,168,120,.18);
+  --sb-active:#00d4a0;
+  --sb-active-border:rgba(0,168,120,.35);
   --sb-hover:rgba(255,255,255,.06);
   --sb-btn:rgba(255,255,255,.4);
-  --sb-btn-hl:#ff8a9a;
+  --sb-btn-hl:#00d4a0;
 }
 
 /* ── BASE ── */
@@ -161,7 +161,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   font-size:15px;font-weight:600;letter-spacing:-.025em;
   color:#fff;
 }
-.cw-name span{color:var(--cw-coral);}
+.cw-name span{color:rgba(255,255,255,.5);}
 
 .sb-controls{display:flex;align-items:center;gap:5px;}
 .sync-dot{width:5px;height:5px;border-radius:50%;background:#10b981;flex-shrink:0;transition:all .3s;}
@@ -202,7 +202,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;
   background:rgba(255,255,255,.07);color:var(--sb-text-dim);flex-shrink:0;
 }
-.list-item.active .count{background:rgba(255,100,122,.18);color:var(--sb-active);}
+.list-item.active .count{background:rgba(0,168,120,.18);color:var(--sb-active);}
 .list-item .list-actions{display:flex;gap:2px;opacity:0;margin-left:auto;}
 .list-item:hover .list-actions{opacity:1;}
 .list-item:hover .count{display:none;}
@@ -243,7 +243,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;
   background:rgba(255,255,255,.07);color:var(--sb-text-dim);
 }
-.global-item.active .count{background:rgba(255,100,122,.18);color:var(--sb-active);}
+.global-item.active .count{background:rgba(0,168,120,.18);color:var(--sb-active);}
 
 /* Sidebar bottom actions */
 .sidebar-bottom{padding:5px 8px 6px;border-top:1px solid var(--sb-border);}
@@ -452,7 +452,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 }
 [data-theme="dark"] .inline-add-trigger,[data-theme="navy"] .inline-add-trigger{background:var(--bg-secondary);}
 .inline-add-trigger:hover{color:var(--cw-blue);border-color:var(--cw-blue);background:var(--accent-soft);}
-[data-theme="dark"] .inline-add-trigger:hover,[data-theme="navy"] .inline-add-trigger:hover{color:var(--cw-coral);border-color:var(--cw-coral);background:rgba(255,100,122,.08);}
+[data-theme="dark"] .inline-add-trigger:hover,[data-theme="navy"] .inline-add-trigger:hover{color:var(--cw-coral);border-color:var(--cw-coral);background:rgba(0,168,120,.08);}
 .inline-add-form{
   background:var(--bg-primary);border:1.5px solid var(--border-focus);
   border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:8px;
@@ -610,13 +610,13 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   --bg-primary:#111318;--bg-secondary:#16181f;--bg-tertiary:#1c1f29;
   --text-primary:#f1f3ff;--text-secondary:#8b91b5;--text-tertiary:#464c6e;
   --border-light:rgba(255,255,255,.06);--border-mid:rgba(255,255,255,.1);
-  --accent-soft:rgba(255,100,122,.1);--accent:#ff647a;
+  --accent-soft:rgba(0,168,120,.1);--accent:#00a878;
 }
 [data-theme="navy"]{
   --bg-primary:#141c4a;--bg-secondary:#1a2356;--bg-tertiary:#1e2860;
   --text-primary:#ffffff;--text-secondary:rgba(255,255,255,.62);--text-tertiary:rgba(255,255,255,.3);
   --border-light:rgba(255,255,255,.07);--border-mid:rgba(255,255,255,.12);
-  --accent-soft:rgba(255,100,122,.15);--accent:#ff647a;
+  --accent-soft:rgba(0,168,120,.15);--accent:#00a878;
 }
 
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
@@ -693,15 +693,15 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
       </button>
       <button class="add-list-btn" id="email-import-btn" onclick="openEmailImport()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="12" height="9" rx="1"/><polyline points="1,3 7,8 13,3"/></svg>
-        Email → Taken
+        Email → Tasks
       </button>
       <button class="add-list-btn highlight" onclick="openJiraModal()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="12" height="12" rx="2"/><path d="M4 7l2.5 2.5L10 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Jira → Taken
+        Jira → Tasks
       </button>
       <button class="add-list-btn" onclick="openExportModal()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>
-        Weekoverzicht exporteren
+        Weekoverzicht
       </button>
       <button class="add-list-btn highlight" onclick="openIBPExport()">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><line x1="7" y1="4" x2="7" y2="7"/><circle cx="7" cy="10" r="0.8" fill="currentColor" stroke="none"/></svg>
@@ -801,7 +801,7 @@ applyTheme();
 let lang = localStorage.getItem('lang') || 'nl';
 const T = {
 nl:{
-  appTitle:'Taken',newList:'Nieuwe lijst',emailTaken:'Email → Taken',jiraTaken:'Jira → Taken',exportWeek:'Weekoverzicht exporteren',
+  appTitle:'Tasks',newList:'Nieuwe lijst',emailTaken:'Email → Tasks',jiraTaken:'Jira → Tasks',exportWeek:'Weekoverzicht exporteren',
   today:'Vandaag',allTasks:'Alle taken',highPrio:'Hoge prioriteit',allOpen:'Alle open taken',done:'Afgerond',waitingOn:'Wacht op',overview:'Overzicht',
   addTask:'Taak toevoegen',noPrio:'Geen prio',high:'Hoog',medium:'Medium',low:'Laag',none:'Geen',
   cancel:'Annuleren',save:'Opslaan',create:'Aanmaken',del:'Verwijderen',close:'Sluiten',
@@ -828,7 +828,7 @@ nl:{
   jiraS1:'Jira-issues ophalen (Atlassian MCP)',jiraS2:'Taken aanmaken in Supabase (lijst: Jira)',jiraS3:'Bestaande taken worden overgeslagen',
   jiraRefresh:'↻ Verversen',jiraOpenBtn:'Openen in Claude ↗',
   jiraDesc:'Claude haalt via de Atlassian MCP je issues op en voegt ze direct in Supabase in.',
-  emailTitle:'Email → Taken',emailDesc:'Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren.',
+  emailTitle:'Email → Tasks',emailDesc:'Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren.',
   emailOpenBtn:'Openen in Claude ↗',
   nav:'navigeren',enterOp:'openen',escCl:'sluiten',
   weekTitle:'Weekoverzicht Taken',genOn:'Gegenereerd op',
@@ -1735,7 +1735,7 @@ function openReleaseNotes(){
     <div>
       <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;display:flex;align-items:center;gap:8px;">
         v${r.v}
-        ${r.latest?`<span style="font-size:9.5px;font-weight:600;background:linear-gradient(135deg,#f0645e,#1c4dff);color:#fff;padding:2px 7px;border-radius:8px;">${tr('current')}</span>`:''}
+        ${r.latest?`<span style="font-size:9.5px;font-weight:600;background:linear-gradient(135deg,#00a878,#1c4dff);color:#fff;padding:2px 7px;border-radius:8px;">${tr('current')}</span>`:''}
       </div>
       <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:6px;">${r.date}</div>
       <ul style="list-style:none;display:flex;flex-direction:column;gap:3px;">
@@ -1764,7 +1764,7 @@ function openJiraModal() {
   const listInfo = jiraList
     ? `De "Jira" lijst bestaat al met id: ${jiraList.id}`
     : 'De "Jira" lijst bestaat nog niet — maak die eerst aan in Supabase (tabel: lists, name="Jira", color="#0052CC") en gebruik dat id.';
-  const prompt = `Haal via de Atlassian MCP mijn openstaande Jira-issues op (toegewezen aan mij, nog niet Done) en voeg ze toe als taken in mijn Taken-app via Supabase.\n\n${supabaseInfo}\nTabel: tasks\nKolommen: list_id (uuid), text (varchar), priority (varchar: high/medium/low/none), done (bool, standaard false), position (int), jira_key (varchar), due_date (date of null)\n\n${listInfo}\n\nAl bestaande jira_keys (sla deze over): ${existingKeys}\n\nPrioriteit mapping: Highest/High → high, Medium → medium, Low/Lowest → low\n\nStappen:\n1. Haal projecten op via Atlassian MCP\n2. Haal openstaande issues op (assignee = currentUser, statusCategory != Done)\n3. Maak voor elk issue een POST naar de Supabase tasks-tabel\n4. Geef een overzicht van wat je hebt toegevoegd`;
+  const prompt = `Haal via de Atlassian MCP mijn openstaande Jira-issues op (toegewezen aan mij, nog niet Done) en voeg ze toe als taken in mijn Tasks-app via Supabase.\n\n${supabaseInfo}\nTabel: tasks\nKolommen: list_id (uuid), text (varchar), priority (varchar: high/medium/low/none), done (bool, standaard false), position (int), jira_key (varchar), due_date (date of null)\n\n${listInfo}\n\nAl bestaande jira_keys (sla deze over): ${existingKeys}\n\nPrioriteit mapping: Highest/High → high, Medium → medium, Low/Lowest → low\n\nStappen:\n1. Haal projecten op via Atlassian MCP\n2. Haal openstaande issues op (assignee = currentUser, statusCategory != Done)\n3. Maak voor elk issue een POST naar de Supabase tasks-tabel\n4. Geef een overzicht van wat je hebt toegevoegd`;
   document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal" style="width:420px">
     <h3 style="display:flex;align-items:center;gap:8px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="#0052CC"><path d="M11.75 0C5.26 0 0 5.26 0 11.75s5.26 11.75 11.75 11.75 11.75-5.26 11.75-11.75S18.24 0 11.75 0zm5.84 13.3l-5.84 5.84-5.84-5.84 5.84-5.84 5.84 5.84zm-5.84-1.41L7.96 8.07l3.75-3.75 3.75 3.75-3.76 3.82z"/></svg>
@@ -1976,7 +1976,7 @@ function exportToPDF() {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Weekoverzicht ${weekLabel}</title>
   <style>body{font-family:-apple-system,system-ui,sans-serif;padding:40px;color:#111;max-width:900px;margin:0 auto}h1{font-size:22px;font-weight:600;margin-bottom:4px}.subtitle{font-size:14px;color:#666;margin-bottom:28px}.stats{display:flex;gap:16px;margin-bottom:32px}.stat{flex:1;padding:14px 16px;background:#f7f8fc;border-radius:10px;border:1px solid #eef0f8}.stat-n{font-size:28px;font-weight:700;color:#4F6EF7}.stat-l{font-size:12px;color:#666;margin-top:2px}.stat.green .stat-n{color:#1D9E75}.stat.orange .stat-n{color:#BA7517}.stat.red .stat-n{color:#A32D2D}h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9196b0;margin:24px 0 8px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#9196b0;padding:6px 8px;border-bottom:2px solid #eee}.footer{margin-top:40px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:12px}@media print{body{padding:20px}}</style>
   </head><body>
-  <h1>Weekoverzicht Taken</h1>
+  <h1>Weekoverzicht Tasks</h1>
   <div class="subtitle">${weekLabel} · ${new Date().toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
   <div class="stats">
     <div class="stat"><div class="stat-n">${tasks.length}</div><div class="stat-l">Totaal taken</div></div>
@@ -2246,7 +2246,7 @@ let emailToken = localStorage.getItem('ms_graph_token') || '';
 function openEmailImport(){
   const today=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal email-modal">
-    <h3>Email → Taken</h3>
+    <h3>Email → Tasks</h3>
     <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px">
       Klik op de knop hieronder om Claude te vragen je emails van vandaag te analyseren en taken aan te maken. Claude heeft al toegang tot je mailbox en schrijft de taken direct naar je Email lijst.
     </p>
@@ -2274,7 +2274,7 @@ function setStep(id,status,label){
 
 function showProgress(steps){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal email-modal">
-    <h3>Email → Taken</h3>
+    <h3>Email → Tasks</h3>
     <div class="email-progress">
       ${steps.map(s=>`<div class="email-step ${s.status}" id="step-${s.id}"><div class="step-dot"></div><span>${esc(s.label)}</span></div>`).join('')}
     </div>

@@ -1262,8 +1262,9 @@ function taskHTML(t,showList=false){
     </div>
     <div class="task-actions">
       ${todayBtn}
-      <button class="icon-btn" onclick="editTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>
-      <button class="icon-btn" onclick="removeTask('${t.id}')"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+      <button class="icon-btn" onclick="editTask('${t.id}')" title="Bewerken"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5l2 2L4 10 1 11l1-3 6.5-6.5z"/></svg></button>
+      <button class="icon-btn" onclick="copyTaskModal('${t.id}')" title="Kopiëren naar lijst"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="7" height="7" rx="1"/><path d="M1 8V2a1 1 0 0 1 1-1h6"/></svg></button>
+      <button class="icon-btn" onclick="removeTask('${t.id}')" title="Verwijderen"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
     </div>
   </div>`;
 }
@@ -1556,6 +1557,19 @@ async function submitNewList(parentId){
 }
 function editTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  // Build flat list of all lists for the selector
+  function flatLists(lists,depth=0){
+    const result=[];
+    const top=lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
+    function walk(l,d){
+      result.push({...l,depth:d});
+      lists.filter(c=>c.parent_id===l.id).sort((a,b)=>a.position-b.position).forEach(c=>walk(c,d+1));
+    }
+    top.forEach(l=>walk(l,0));
+    return result;
+  }
+  const allLists=flatLists(state.lists);
+  const listOpts=allLists.map(l=>`<option value="${l.id}" ${l.id===t.list_id?'selected':''}>${'  '.repeat(l.depth)}${esc(l.name)}</option>`).join('');
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal modal-wide">
     <h3>${tr('editTaskTitle')}</h3>
     <div><label>${tr('descLabel')}</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
@@ -1584,6 +1598,7 @@ function editTask(id){
       </select></div>
     </div>
     <div><label>${tr('waitingLabel')}</label><input id="modal-task-waiting" placeholder="${tr('waitingPH')}" value="${esc(t.waiting_for||'')}"/></div>
+    <div><label>Lijst / Project</label><select id="modal-task-list">${listOpts}</select></div>
     <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="3" placeholder="${tr('notesPH')}">${esc(t.notes||'')}</textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button>
@@ -1599,15 +1614,62 @@ async function submitEditTask(id){
   const waiting=document.getElementById('modal-task-waiting').value.trim();
   const recurrence=document.getElementById('modal-task-recurrence').value;
   const ibp=document.getElementById('modal-task-ibp')?.value||'none';
+  const newListId=document.getElementById('modal-task-list')?.value||null;
   if(!text)return;
   closeModal();
-  await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp);
+  await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp,null,newListId);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus,newListId){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  const listChanged=newListId&&newListId!==t.list_id;
   t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;t.kanban_status=kanbanStatus||t.kanban_status||'todo';
+  if(listChanged)t.list_id=newListId;
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||'todo'},prefer:'return=minimal'});
+  const patch={text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||t.kanban_status||'todo'};
+  if(listChanged)patch.list_id=newListId;
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:patch,prefer:'return=minimal'});
+}
+function copyTaskModal(id){
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  function flatLists(lists){
+    const result=[];
+    const top=lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
+    function walk(l,d){result.push({...l,depth:d});lists.filter(c=>c.parent_id===l.id).sort((a,b)=>a.position-b.position).forEach(c=>walk(c,d+1));}
+    top.forEach(l=>walk(l,0));return result;
+  }
+  const allLists=flatLists(state.lists);
+  const listOpts=allLists.map(l=>`<option value="${l.id}">${'  '.repeat(l.depth)}${esc(l.name)}</option>`).join('');
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="width:320px">
+    <h3>Kopiëren naar lijst</h3>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.5">"${esc(t.text.slice(0,60))}${t.text.length>60?'…':''}"</p>
+    <div><label>Doel lijst</label><select id="copy-task-list">${listOpts}</select></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+      <input type="checkbox" id="copy-keep-original" checked style="width:14px;height:14px;cursor:pointer;accent-color:var(--cw-coral)"/>
+      <label for="copy-keep-original" style="font-size:12px;color:var(--text-secondary);cursor:pointer">Origineel behouden</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
+      <button class="btn-primary" onclick="submitCopyTask('${id}')">Kopiëren</button>
+    </div>
+  </div></div>`;
+}
+async function submitCopyTask(id){
+  const t=state.tasks.find(t=>t.id===id);if(!t)return;
+  const targetListId=document.getElementById('copy-task-list').value;
+  const keepOriginal=document.getElementById('copy-keep-original').checked;
+  closeModal();
+  const pos=state.tasks.filter(x=>x.list_id===targetListId).length;
+  const body={list_id:targetListId,text:t.text,priority:t.priority,done:false,position:pos,
+    due_date:t.due_date||null,notes:t.notes||null,waiting_for:t.waiting_for||null,
+    recurrence:t.recurrence||null,ibp:t.ibp||null,kanban_status:'todo'};
+  const res=await sb('tasks',{method:'POST',body});
+  if(res&&res[0]){
+    state.tasks.push(res[0]);
+    if(!keepOriginal)await removeTask(id);
+    else render();
+    const list=state.lists.find(l=>l.id===targetListId);
+    showToast((keepOriginal?'Gekopieerd':'Verplaatst')+' naar '+(list?list.name:'lijst'));
+  }
 }
 function nextDueDate(current,recurrence){
   if(!current||!recurrence)return null;
@@ -1649,31 +1711,54 @@ function openConfirmModal(title,msg,onConfirm){
   window._confirmAction=onConfirm;
 }
 function openReleaseNotes(){
-  const items=[
-    'Vandaag, Week, Alle taken, Hoge prio, Open, Afgerond, Wacht op filters',
-    'Terugkerende taken (dagelijks/wekelijks/maandelijks/jaarlijks)',
-    'Jira → Taken via Atlassian MCP',
-    'Email → Taken via Claude',
-    'Weekoverzicht exporteren naar Excel en PDF',
-    'IBP-veld per taak (Impact / Blocker / Priority)',
-    'Tweetalig: Nederlands / Engels',
-    'Donker en licht thema',
-    'PWA: installeerbaar als app op telefoon',
+  const releases=[
+    {v:'1.3',date:'2026-05-04',latest:true,items:[
+      'CaseWare.com look & feel — licht thema, Figtree font, blauwe CTA knoppen',
+      'Echte CaseWare omega mark met coral→blauw gradient',
+      'Resizable sidebar — sleep de rechterrand om breedte aan te passen',
+      'HTML structuur fix — taken nu altijd zichtbaar',
+      'Taak verplaatsen naar andere lijst in de bewerkmodal',
+    ]},
+    {v:'1.2',date:'2026-05-03',items:[
+      'CaseWare huisstijl sidebar — altijd donker, ongeacht thema',
+      'Release notes als hover-tooltip op het i-icoontje',
+      'CSS variabelen volledig herschreven voor consistentie',
+    ]},
+    {v:'1.1',date:'2026-04-17',items:[
+      'Jira → Taken koppeling via Atlassian MCP',
+      'IBP rapport exporteren met "Verbeteren met Claude"',
+      'Weekoverzicht exporteren naar Excel (.xlsx) en PDF',
+      'Kanban-bord weergave (Todo / In Progress / Done)',
+      'Terugkerende taken (dagelijks t/m jaarlijks)',
+      'Vandaag en Deze week filter · Tweetalig NL/EN · 3 thema\'s',
+    ]},
+    {v:'1.0',date:'2026-04-01',items:[
+      'Meerdere lijsten met sublijsten en kleurcodering',
+      'Taken met prioriteit, deadline, notities, wacht-op, IBP',
+      'Globale filters · Ctrl+K zoeken · Email → Taken · Supabase sync · PWA',
+    ]},
   ];
-  const li=items.map(n=>'<li style="font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5"><span style="color:var(--text-tertiary);">·</span>'+esc(n)+'</li>').join('');
-  document.getElementById('modal-container').innerHTML='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="width:360px">'
-    +'<h3>'+tr('releaseNotes')+'</h3>'
-    +'<div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">'
-    +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);display:flex;align-items:center;gap:8px">'
-    +'v1.1 <span style="font-size:10px;font-weight:500;background:#EAF3DE;color:#3B6D11;padding:1px 7px;border-radius:10px;">'+tr('current')+'</span>'
-    +'</div>'
-    +'<div style="font-size:11px;color:var(--text-tertiary)">2026-04-17</div>'
-    +'<ul style="list-style:none;display:flex;flex-direction:column;gap:4px;margin-top:4px">'+li+'</ul>'
-    +'</div>'
-    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'
-    +'<button class="btn-primary" onclick="closeModal()">'+tr('close')+'</button>'
-    +'</div>'
-    +'</div></div>';
+  const esc2=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html=releases.map((r,i)=>`
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px;display:flex;align-items:center;gap:8px;">
+        v${r.v}
+        ${r.latest?`<span style="font-size:9.5px;font-weight:600;background:linear-gradient(135deg,#f0645e,#1c4dff);color:#fff;padding:2px 7px;border-radius:8px;">${tr('current')}</span>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:6px;">${r.date}</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:3px;">
+        ${r.items.map(n=>`<li style="font-size:12px;color:var(--text-secondary);display:flex;gap:6px;line-height:1.5;"><span style="color:var(--text-tertiary);flex-shrink:0">·</span>${esc2(n)}</li>`).join('')}
+      </ul>
+    </div>
+    ${i<releases.length-1?'<hr style="border:none;border-top:1px solid var(--border);margin:2px 0">':''}
+  `).join('');
+  document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="width:400px">
+    <h3>${tr('releaseNotes')}</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;padding-right:2px;">${html}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+      <button class="btn-primary" onclick="closeModal()">${tr('close')}</button>
+    </div>
+  </div></div>`;
 }
 
 function closeModal(){document.getElementById('modal-container').innerHTML='';}

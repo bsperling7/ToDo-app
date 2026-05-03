@@ -586,6 +586,26 @@ html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:va
   .inline-add-form{padding:8px 10px;}
 }
 
+/* ── BACKWARDS COMPAT ALIASES (used by JS inline styles) ── */
+[data-theme="light"]{
+  --bg-primary:#ffffff;--bg-secondary:#f9fafb;--bg-tertiary:#f0f2f7;
+  --text-primary:#111827;--text-secondary:#4b5563;--text-tertiary:#9ca3af;
+  --border-light:rgba(0,0,0,.06);--border-mid:rgba(0,0,0,.12);
+  --accent-soft:#eff3ff;--accent:#1c4dff;
+}
+[data-theme="dark"]{
+  --bg-primary:#111318;--bg-secondary:#16181f;--bg-tertiary:#1c1f29;
+  --text-primary:#f1f3ff;--text-secondary:#8b91b5;--text-tertiary:#464c6e;
+  --border-light:rgba(255,255,255,.06);--border-mid:rgba(255,255,255,.1);
+  --accent-soft:rgba(255,100,122,.1);--accent:#ff647a;
+}
+[data-theme="navy"]{
+  --bg-primary:#141c4a;--bg-secondary:#1a2356;--bg-tertiary:#1e2860;
+  --text-primary:#ffffff;--text-secondary:rgba(255,255,255,.62);--text-tertiary:rgba(255,255,255,.3);
+  --border-light:rgba(255,255,255,.07);--border-mid:rgba(255,255,255,.12);
+  --accent-soft:rgba(255,100,122,.15);--accent:#ff647a;
+}
+
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 </style>

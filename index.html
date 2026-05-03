@@ -544,6 +544,30 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
   display:flex;flex-direction:column;gap:12px;
   box-shadow:0 20px 60px rgba(0,0,0,.15);
 }
+.modal.modal-wide{width:420px;}
+/* Multi-list picklist */
+.list-picklist{
+  display:flex;flex-direction:column;gap:4px;
+  max-height:160px;overflow-y:auto;
+  border:1.5px solid var(--border);border-radius:var(--radius-md);
+  padding:6px;background:var(--bg-secondary);
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.list-picklist-item{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 7px;border-radius:var(--radius-sm);cursor:pointer;
+  font-size:12.5px;color:var(--text-primary);transition:background .1s;
+  user-select:none;
+}
+.list-picklist-item:hover{background:var(--bg-hover);}
+.list-picklist-item.selected{background:var(--accent-soft);}
+.list-picklist-item input[type=checkbox]{
+  width:14px;height:14px;cursor:pointer;flex-shrink:0;
+  accent-color:var(--cw-coral);
+}
+.list-picklist-item .pick-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.list-picklist-divider{font-size:9.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-tertiary);padding:6px 7px 2px;}
 .modal::before{content:'';display:block;height:2px;border-radius:var(--radius-xl) var(--radius-xl) 0 0;background:var(--cw-grad);margin:-22px -22px 0;}
 .modal h3{font-size:15px;font-weight:600;letter-spacing:-.01em;margin-top:8px;}
 .modal input,.modal select,.modal textarea{
@@ -1053,7 +1077,7 @@ function onDragEnd(){
 
 // Render
 function countOpenDeep(lid){
-  let n=state.tasks.filter(t=>t.list_id===lid&&!t.done).length;
+  let n=state.tasks.filter(t=>(t.list_id===lid||(Array.isArray(t.extra_list_ids)&&t.extra_list_ids.includes(lid)))&&!t.done).length;
   state.lists.filter(l=>l.parent_id===lid).forEach(c=>{n+=countOpenDeep(c.id);});
   return n;
 }
@@ -1200,7 +1224,7 @@ function getFiltered(){
       t=t.filter(t=>!t.done&&t.due_date&&isInWeek(t.due_date,wr));
     }
   }else{
-    t=state.tasks.filter(t=>t.list_id===state.activeListId);
+    t=state.tasks.filter(t=>t.list_id===state.activeListId||(Array.isArray(t.extra_list_ids)&&t.extra_list_ids.includes(state.activeListId)));
     if(state.filter==='open')t=t.filter(t=>!t.done);
     if(state.filter==='done')t=t.filter(t=>t.done);
     if(state.filter==='high')t=t.filter(t=>t.priority==='high');
@@ -1225,7 +1249,10 @@ function dueDateLabel(d){
 function taskHTML(t,showList=false){
   const tc={high:'tag-high',medium:'tag-medium',low:'tag-low',none:''}[t.priority]||'';
   const list=showList?state.lists.find(l=>l.id===t.list_id):null;
+  const extraIds=Array.isArray(t.extra_list_ids)?t.extra_list_ids:[];
+  const extraLists=extraIds.map(eid=>state.lists.find(l=>l.id===eid)).filter(Boolean);
   const listLabel=list?`<span class="task-list-label"><span style="width:6px;height:6px;border-radius:50%;background:${list.color};display:inline-block;flex-shrink:0"></span>${esc(list.name)}</span>`:'';
+  const extraLabels=extraLists.map(l=>`<span class="task-list-label" style="opacity:.7"><span style="width:6px;height:6px;border-radius:50%;background:${l.color};display:inline-block;flex-shrink:0"></span>${esc(l.name)}</span>`).join('');
   const due=dueDateLabel(t.due_date);
   const waiting=t.waiting_for?`<span class="task-waiting"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="4" r="2"/><path d="M2 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>${esc(t.waiting_for)}</span>`:'';
   const recLabels={daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks',yearly:'Jaarlijks'};
@@ -1251,7 +1278,7 @@ function taskHTML(t,showList=false){
       <div class="task-text">${esc(t.text)}</div>
       <div class="task-meta" style="flex-wrap:wrap;gap:5px">
         ${t.priority&&t.priority!=='none'?`<span class="tag ${tc}">${PL[t.priority]}</span>`:''}
-        ${statusBtn}${due}${waiting}${recBadge}${ibpBadge}${jiraBadge}${listLabel}
+        ${statusBtn}${due}${waiting}${recBadge}${ibpBadge}${jiraBadge}${listLabel}${extraLabels}
       </div>
       ${notesEl}
     </div>
@@ -1550,21 +1577,28 @@ async function submitNewList(parentId){
   closeModal();
   await createList(name,selectedColor,parentId||null);
 }
+function flatListsUtil(lists){
+  const result=[];
+  const top=lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
+  function walk(l,d){result.push({...l,depth:d});lists.filter(c=>c.parent_id===l.id).sort((a,b)=>a.position-b.position).forEach(c=>walk(c,d+1));}
+  top.forEach(l=>walk(l,0));return result;
+}
 function editTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
-  // Build flat list of all lists for the selector
-  function flatLists(lists,depth=0){
-    const result=[];
-    const top=lists.filter(l=>!l.parent_id).sort((a,b)=>a.position-b.position);
-    function walk(l,d){
-      result.push({...l,depth:d});
-      lists.filter(c=>c.parent_id===l.id).sort((a,b)=>a.position-b.position).forEach(c=>walk(c,d+1));
-    }
-    top.forEach(l=>walk(l,0));
-    return result;
-  }
-  const allLists=flatLists(state.lists);
-  const listOpts=allLists.map(l=>`<option value="${l.id}" ${l.id===t.list_id?'selected':''}>${'  '.repeat(l.depth)}${esc(l.name)}</option>`).join('');
+  const extraIds=Array.isArray(t.extra_list_ids)?t.extra_list_ids:[];
+  const allLists=flatListsUtil(state.lists);
+  // Build picklist HTML
+  const picklistHTML=allLists.map(l=>{
+    const isPrimary=l.id===t.list_id;
+    const isExtra=extraIds.includes(l.id);
+    const indent='&nbsp;&nbsp;'.repeat(l.depth);
+    return `<label class="list-picklist-item ${isPrimary||isExtra?'selected':''}" onclick="togglePicklist(this,'${l.id}','${id}')">
+      <input type="checkbox" value="${l.id}" ${isPrimary?'checked disabled':''}${isExtra&&!isPrimary?'checked':''} style="accent-color:var(--cw-coral)"/>
+      <span class="pick-dot" style="background:${l.color}"></span>
+      <span>${indent}${esc(l.name)}</span>
+      ${isPrimary?'<span style="font-size:10px;color:var(--text-tertiary);margin-left:auto">primair</span>':''}
+    </label>`;
+  }).join('');
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal modal-wide">
     <h3>${tr('editTaskTitle')}</h3>
     <div><label>${tr('descLabel')}</label><textarea id="modal-task-text" rows="2">${esc(t.text)}</textarea></div>
@@ -1593,35 +1627,49 @@ function editTask(id){
       </select></div>
     </div>
     <div><label>${tr('waitingLabel')}</label><input id="modal-task-waiting" placeholder="${tr('waitingPH')}" value="${esc(t.waiting_for||'')}"/></div>
-    <div><label>Lijst / Project</label><select id="modal-task-list">${listOpts}</select></div>
-    <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="3" placeholder="${tr('notesPH')}">${esc(t.notes||'')}</textarea></div>
+    <div>
+      <label>Lijsten / Projecten <span style="font-size:10px;color:var(--text-tertiary);font-weight:400">— selecteer meerdere</span></label>
+      <div class="list-picklist" id="task-list-picklist">${picklistHTML}</div>
+    </div>
+    <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="2" placeholder="${tr('notesPH')}">${esc(t.notes||'')}</textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button>
       <button class="btn-primary" onclick="submitEditTask('${id}')">${tr('save')}</button>
     </div>
   </div></div>`;
 }
+function togglePicklist(label,listId,taskId){
+  // Primary list checkbox is disabled, skip
+  const cb=label.querySelector('input[type=checkbox]');
+  if(!cb||cb.disabled)return;
+  // toggle is handled by the checkbox itself via label click
+  label.classList.toggle('selected',cb.checked);
+}
 async function submitEditTask(id){
   const text=document.getElementById('modal-task-text').value.trim();
-  const prio=document.getElementById('modal-task-prio2')?.value||document.getElementById('modal-task-prio')?.value||'none';
+  const prio=document.getElementById('modal-task-prio2')?.value||'none';
   const due=document.getElementById('modal-task-due').value;
   const notes=document.getElementById('modal-task-notes').value.trim();
   const waiting=document.getElementById('modal-task-waiting').value.trim();
   const recurrence=document.getElementById('modal-task-recurrence').value;
   const ibp=document.getElementById('modal-task-ibp')?.value||'none';
-  const newListId=document.getElementById('modal-task-list')?.value||null;
+  // Collect checked (non-disabled) extra lists
+  const checkedBoxes=[...document.querySelectorAll('#task-list-picklist input[type=checkbox]:not(:disabled):checked')];
+  const extraListIds=checkedBoxes.map(cb=>cb.value);
   if(!text)return;
   closeModal();
-  await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp,null,newListId);
+  await updateTask(id,text,prio,due,notes,waiting,recurrence,ibp,null,null,extraListIds);
 }
-async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus,newListId){
+async function updateTask(id,text,priority,dueDate,notes,waitingFor,recurrence,ibp,kanbanStatus,newListId,extraListIds){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   const listChanged=newListId&&newListId!==t.list_id;
   t.text=text;t.priority=priority;t.due_date=dueDate||null;t.notes=notes||null;t.waiting_for=waitingFor||null;t.recurrence=recurrence||null;t.ibp=ibp||null;t.kanban_status=kanbanStatus||t.kanban_status||'todo';
   if(listChanged)t.list_id=newListId;
+  if(extraListIds!==undefined)t.extra_list_ids=extraListIds;
   render();
   const patch={text,priority,due_date:dueDate||null,notes:notes||null,waiting_for:waitingFor||null,recurrence:recurrence||null,ibp:ibp||null,kanban_status:kanbanStatus||t.kanban_status||'todo'};
   if(listChanged)patch.list_id=newListId;
+  if(extraListIds!==undefined)patch.extra_list_ids=extraListIds;
   await sb('tasks?id=eq.'+id,{method:'PATCH',body:patch,prefer:'return=minimal'});
 }
 function copyTaskModal(id){

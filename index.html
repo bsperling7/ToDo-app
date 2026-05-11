@@ -774,7 +774,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.3</span>
+      <span class="version-label">v1.4.5</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -1801,30 +1801,44 @@ function openConfirmModal(title,msg,onConfirm){
 }
 function openReleaseNotes(){
   const releases=[
-    {v:'1.3',date:'2026-05-04',latest:true,items:[
-      'CaseWare.com look & feel — licht thema, Figtree font, blauwe CTA knoppen',
-      'Echte CaseWare omega mark met coral→blauw gradient',
-      'Resizable sidebar — sleep de rechterrand om breedte aan te passen',
-      'HTML structuur fix — taken nu altijd zichtbaar',
-      'Taak verplaatsen naar andere lijst in de bewerkmodal',
+    {v:'1.4.5',date:'2026-05-11',latest:true,items:[
+      'Bij afvinken: deadline automatisch verwijderd',
+      'Bij afvinken: kanban status automatisch naar Done',
+      'Bij terugzetten: kanban status terug naar Todo',
     ]},
-    {v:'1.2',date:'2026-05-03',items:[
-      'CaseWare huisstijl sidebar — altijd donker, ongeacht thema',
-      'Release notes als hover-tooltip op het i-icoontje',
-      'CSS variabelen volledig herschreven voor consistentie',
+    {v:'1.4.4',date:'2026-05-11',items:[
+      'Clear completed: filter op periode én op lijst/project',
+      'Checkboxen per taak — individueel of alles selecteren',
+    ]},
+    {v:'1.4.3',date:'2026-05-11',items:[
+      'IBP rapport exporteren knop hersteld in sidebar',
+    ]},
+    {v:'1.4.2',date:'2026-05-11',items:[
+      'Clear completed modal met checkbox selectie',
+      'Filter op last day / week / month / year / all',
+    ]},
+    {v:'1.4.1',date:'2026-05-10',items:[
+      'Clear completed knop toegevoegd aan sidebar',
+    ]},
+    {v:'1.4.0',date:'2026-05-10',items:[
+      'Multi-list picklist — taak aan meerdere lijsten hangen',
+      'Extra lijsten zichtbaar als badges op de taak',
+      'Supabase kolom: extra_list_ids (uuid[])',
+    ]},
+    {v:'1.3',date:'2026-05-04',items:[
+      'CaseWare.com look & feel — licht thema, Figtree font',
+      'Echte CaseWare omega mark met coral→blauw gradient',
+      'Resizable sidebar — sleep de rechterrand',
+      'Taak kopiëren/verplaatsen naar andere lijst',
     ]},
     {v:'1.1',date:'2026-04-17',items:[
-      'Jira → Taken koppeling via Atlassian MCP',
-      'IBP rapport exporteren met "Verbeteren met Claude"',
-      'Weekoverzicht exporteren naar Excel (.xlsx) en PDF',
-      'Kanban-bord weergave (Todo / In Progress / Done)',
-      'Terugkerende taken (dagelijks t/m jaarlijks)',
-      'Vandaag en Deze week filter · Tweetalig NL/EN · 3 thema\'s',
+      'Jira → Tasks via Atlassian MCP · IBP rapport · Kanban',
+      'Weekoverzicht Excel + PDF · Terugkerende taken',
+      'Tweetalig NL/EN · 3 thema\'s · Vandaag & Week filter',
     ]},
     {v:'1.0',date:'2026-04-01',items:[
-      'Meerdere lijsten met sublijsten en kleurcodering',
-      'Taken met prioriteit, deadline, notities, wacht-op, IBP',
-      'Globale filters · Ctrl+K zoeken · Email → Taken · Supabase sync · PWA',
+      'Meerdere lijsten met sublijsten · Prioriteit · Deadline',
+      'Globale filters · Ctrl+K zoeken · Email → Tasks · PWA',
     ]},
   ];
   const esc2=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

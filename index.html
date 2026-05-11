@@ -685,7 +685,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 <div id="app">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div id="sidebar">
-    <div id="sidebar-resize" id="sb-resize-handle"></div>
+    <div id="sidebar-resize"></div>
     <div class="sb-header">
       <div class="cw-brand">
         <!-- CaseWare omega mark — coral-to-blue gradient matching caseware.com -->
@@ -1669,7 +1669,7 @@ function editTask(id){
       <label>Lijsten / Projecten <span style="font-size:10px;color:var(--text-tertiary);font-weight:400">— selecteer meerdere</span></label>
       <div class="list-picklist" id="task-list-picklist">${picklistHTML}</div>
     </div>
-    <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="2" placeholder="${tr('notesPH')}">${esc(t.notes||'')}</textarea></div>
+    <div><label>${tr('notesLabel')}</label><textarea id="modal-task-notes" rows="5" placeholder="${tr('notesPH')}" style="min-height:100px;resize:vertical">${esc(t.notes||'')}</textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button>
       <button class="btn-primary" onclick="submitEditTask('${id}')">${tr('save')}</button>

@@ -1772,6 +1772,14 @@ async function setKanbanStatus(id, status){
 async function toggleTask(id){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   t.done=!t.done;
+  // When marking done: clear deadline + set kanban to done
+  // When unmarking: restore kanban to todo (deadline stays cleared)
+  if(t.done){
+    t.kanban_status='done';
+    t.due_date=null;
+  } else {
+    t.kanban_status='todo';
+  }
   if(t.done&&t.recurrence){
     // Maak nieuwe taak aan met volgende deadline
     const newDue=nextDueDate(t.due_date,t.recurrence);
@@ -1785,7 +1793,7 @@ async function toggleTask(id){
   // Remove from today if done
   if(t.done){todayTasks.delete(String(id));saveTodayTasks();}
   render();
-  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done},prefer:'return=minimal'});
+  await sb('tasks?id=eq.'+id,{method:'PATCH',body:{done:t.done,kanban_status:t.kanban_status,due_date:t.due_date},prefer:'return=minimal'});
 }
 function openConfirmModal(title,msg,onConfirm){
   document.getElementById('modal-container').innerHTML=`<div class="modal-bg"><div class="modal"><h3>${esc(title)}</h3><p style="font-size:13px;color:var(--text-secondary)">${esc(msg)}</p><div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">${tr('cancel')}</button><button class="btn-primary btn-danger" onclick="confirmAction()">${tr('del')}</button></div></div></div>`;

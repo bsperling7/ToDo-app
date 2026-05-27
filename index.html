@@ -352,8 +352,8 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 /* Task rows */
 .task-row{
   display:flex;align-items:flex-start;gap:10px;
-  padding:9px 12px;border-radius:var(--radius-lg);
-  border:1px solid transparent;margin-bottom:2px;
+  padding:11px 12px;border-radius:var(--radius-lg);
+  border:1px solid transparent;margin-bottom:6px;
   transition:all .1s;background:var(--bg-primary);
   box-shadow:0 1px 2px rgba(0,0,0,.04);
 }
@@ -774,7 +774,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.4.9</span>
+      <span class="version-label">v1.4.10</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -1801,7 +1801,10 @@ function openConfirmModal(title,msg,onConfirm){
 }
 function openReleaseNotes(){
   const releases=[
-    {v:'1.4.9',date:'2026-05-27',latest:true,items:[
+    {v:'1.4.10',date:'2026-05-27',latest:true,items:[
+      'Meer ruimte tussen taken in lijstweergave (padding 9→11px, margin 2→6px)',
+    ]},
+    {v:'1.4.9',date:'2026-05-27',items:[
       'Jira → Tasks: native integratie via Anthropic API + Atlassian MCP',
       'Geen omweg via Claude.ai meer — issues worden direct in Supabase gezet',
       'API-key invoer in modal, opgeslagen in localStorage',

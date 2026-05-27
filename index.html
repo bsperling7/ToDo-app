@@ -774,7 +774,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.4.10</span>
+      <span class="version-label">v1.4.11</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -1801,7 +1801,10 @@ function openConfirmModal(title,msg,onConfirm){
 }
 function openReleaseNotes(){
   const releases=[
-    {v:'1.4.10',date:'2026-05-27',latest:true,items:[
+    {v:'1.4.11',date:'2026-05-27',latest:true,items:[
+      'Jira → Tasks: geen API-key meer nodig, opent claude.ai met kant-en-klare prompt',
+    ]},
+    {v:'1.4.10',date:'2026-05-27',items:[
       'Meer ruimte tussen taken in lijstweergave (padding 9→11px, margin 2→6px)',
       'Meer ruimte tussen kanban-kaarten (gap 7→12px, padding 11→13px)',
     ]},
@@ -1887,156 +1890,59 @@ function openReleaseNotes(){
 function closeModal(){document.getElementById('modal-container').innerHTML='';}
 function confirmAction(){closeModal();if(window._confirmAction)window._confirmAction();}
 
-// ── Jira → Taken (via Claude + Atlassian MCP) ─────────────────
-// ── Jira → Tasks (native: Anthropic API + Atlassian MCP) ──────────────
-async function openJiraModal() {
-  const emailListId = '63c054ef-d0d0-4f71-b22f-38c831a7ba59';
-  const jiraList = state.lists.find(l => l.name.toLowerCase() === 'jira');
-  const targetListId = jiraList ? jiraList.id : emailListId;
-  const targetListName = jiraList ? jiraList.name : 'Email';
+// ── Jira → Tasks (via claude.ai + Atlassian MCP) ──────────────
+function openJiraModal() {
   const existingKeys = state.tasks.filter(t => t.jira_key).map(t => t.jira_key);
-  const savedKey = localStorage.getItem('anthropic_api_key') || '';
+  const jiraList = state.lists.find(l => l.name.toLowerCase() === 'jira');
+  const targetListId = jiraList ? jiraList.id : '63c054ef-d0d0-4f71-b22f-38c831a7ba59';
+  const targetListName = jiraList ? jiraList.name : 'Email';
 
-  document.getElementById('modal-container').innerHTML = `<div class="modal-bg"><div class="modal jira-modal" style="width:440px">
+  const prompt = `Haal via de Atlassian MCP mijn openstaande Jira-issues op (toegewezen aan mij, statusCategory != Done) en voeg ze toe als taken in Supabase.
+
+Supabase URL: ${SUPABASE_URL}
+Supabase anon key: ${SUPABASE_KEY}
+Tabel: tasks
+Lijst: "${targetListName}" (list_id: ${targetListId})
+
+Kolommen om in te vullen:
+- list_id: "${targetListId}"
+- text: de samenvatting van het issue
+- done: false
+- priority: "hoog" (Critical/High), "medium" (Major/Medium), "laag" (rest)
+- kanban_status: "todo" (To Do/Open), "inprogress" (In Progress/In Review), "done" (Done)
+- jira_key: de issue key (bijv. NLCAUDIT-809)
+- position: oplopend vanaf 200
+
+Sla deze al bestaande jira_keys over: ${existingKeys.length ? existingKeys.join(', ') : 'geen'}
+
+Stappen:
+1. Haal issues op via Atlassian MCP (JQL: assignee = currentUser() AND statusCategory != Done)
+2. Voeg elke nieuw issue in via POST naar Supabase REST API
+3. Geef een overzicht van wat je hebt toegevoegd`;
+
+  document.getElementById('modal-container').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal jira-modal" style="width:420px">
     <h3 style="display:flex;align-items:center;gap:8px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="#0052CC"><path d="M11.75 0C5.26 0 0 5.26 0 11.75s5.26 11.75 11.75 11.75 11.75-5.26 11.75-11.75S18.24 0 11.75 0zm5.84 13.3l-5.84 5.84-5.84-5.84 5.84-5.84 5.84 5.84zm-5.84-1.41L7.96 8.07l3.75-3.75 3.75 3.75-3.76 3.82z"/></svg>
       Jira → Tasks
     </h3>
-    <div id="jira-key-section" style="margin-bottom:10px">
-      <label style="font-size:11px;color:var(--text-tertiary);display:block;margin-bottom:4px">Anthropic API key</label>
-      <div style="display:flex;gap:6px;align-items:center">
-        <input id="jira-api-key" type="password" value="${savedKey}"
-          placeholder="sk-ant-…"
-          style="flex:1;padding:6px 9px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-secondary);color:var(--text-primary);font-size:12px;font-family:monospace;outline:none"/>
-        <button onclick="document.getElementById('jira-api-key').type=document.getElementById('jira-api-key').type==='password'?'text':'password'"
-          style="font-size:11px;padding:5px 9px;border-radius:var(--radius-md);border:0.5px solid var(--border-mid);background:var(--bg-secondary);color:var(--text-tertiary);cursor:pointer">👁</button>
-      </div>
-      <div style="font-size:10.5px;color:var(--text-tertiary);margin-top:3px">Wordt opgeslagen in localStorage van deze browser.</div>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px">
+      Opent Claude met een kant-en-klare prompt. Claude haalt je Jira-issues op via de Atlassian connector en schrijft ze direct naar Supabase.<br><br>
+      Na afloop: klik op <strong>↻ Verversen</strong> om de nieuwe taken te laden.
+    </p>
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:9px 12px;font-size:11px;color:var(--text-tertiary);line-height:1.6">
+      ${existingKeys.length ? `<strong style="color:var(--text-secondary)">${existingKeys.length} bestaande Jira-taken</strong> worden overgeslagen.` : 'Nog geen Jira-taken aanwezig — alles wordt toegevoegd.'}
     </div>
-    <div id="jira-steps" class="email-progress" style="display:none">
-      <div class="email-step active" id="jstep-1"><span class="step-dot"></span>Jira-issues ophalen via Atlassian MCP…</div>
-      <div class="email-step" id="jstep-2"><span class="step-dot"></span>Taken aanmaken in Supabase…</div>
-      <div class="email-step" id="jstep-3"><span class="step-dot"></span>Klaar</div>
-    </div>
-    <div id="jira-result" style="display:none;margin-top:8px"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuleren</button>
-      <button class="btn-primary btn-jira" id="jira-start-btn" onclick="startJiraSync()">
-        Synchroniseren ↗
+      <button class="btn-primary" onclick="closeModal();loadAll();showToast('Verversen…')" style="background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border)">
+        ↻ Verversen
+      </button>
+      <button class="btn-primary btn-jira" onclick="window.open('https://claude.ai/new?q='+encodeURIComponent(document.getElementById('jira-prompt-hidden').value),'_blank');closeModal()">
+        Openen in Claude ↗
       </button>
     </div>
+    <textarea id="jira-prompt-hidden" style="display:none">${prompt.replace(/`/g,'&#96;')}</textarea>
   </div></div>`;
-}
-
-async function startJiraSync() {
-  const apiKey = document.getElementById('jira-api-key')?.value?.trim();
-  if (!apiKey) { showToast('Voer eerst een Anthropic API key in'); return; }
-  localStorage.setItem('anthropic_api_key', apiKey);
-
-  // Hide key section, show progress
-  document.getElementById('jira-key-section').style.display = 'none';
-  document.getElementById('jira-start-btn').style.display = 'none';
-  document.getElementById('jira-steps').style.display = 'flex';
-
-  const emailListId = '63c054ef-d0d0-4f71-b22f-38c831a7ba59';
-  const jiraList = state.lists.find(l => l.name.toLowerCase() === 'jira');
-  const targetListId = jiraList ? jiraList.id : emailListId;
-  const targetListName = jiraList ? jiraList.name : 'Email';
-  const existingKeys = state.tasks.filter(t => t.jira_key).map(t => t.jira_key);
-
-  function setStep(n, s) {
-    for(let i=1;i<=3;i++){
-      const el=document.getElementById('jstep-'+i);
-      if(!el)continue;
-      el.className='email-step'+(i===n?' '+s:i<n?' done':'');
-    }
-  }
-
-  try {
-    setStep(1,'active');
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-beta':'mcp-client-2025-04-04'
-      },
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:4000,
-        system:'You are a data extraction assistant. Return ONLY valid JSON, no markdown, no explanation.',
-        mcp_servers:[{type:'url',url:'https://mcp.atlassian.com/v1/mcp',name:'atlassian'}],
-        messages:[{role:'user',content:`Use the Atlassian MCP to fetch all Jira issues assigned to the current user where statusCategory != Done. Return a JSON array of objects with fields: key (string), summary (string), priority (string: map Critical/Highest/High→"hoog", Major/Medium→"medium", Low/Lowest/Trivial/Minor→"laag"), status (string: "todo" if To Do/Open/Analyzing, "inprogress" if In Progress/In Review/Needs Review, "done" if Done/Closed/Resolved), due_date (string YYYY-MM-DD or null). Skip these already-imported keys: ${existingKeys.join(',')||'none'}. Return ONLY the JSON array.`}]
-      })
-    });
-
-    if(!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.error?.message || 'API error '+res.status);
-    }
-    const data = await res.json();
-
-    let issues = [];
-    const textBlocks = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    try {
-      const clean = textBlocks.replace(/```json|```/g,'').trim();
-      issues = JSON.parse(clean);
-    } catch(e) {
-      const m = textBlocks.match(/\[[\s\S]*\]/);
-      if(m) issues = JSON.parse(m[0]);
-      else throw new Error('Kon geen issues parsen');
-    }
-
-    if(!Array.isArray(issues)) throw new Error('Onverwacht antwoordformaat');
-    const newIssues = issues.filter(i=>!existingKeys.includes(i.key));
-
-    setStep(2,'active');
-
-    if(newIssues.length === 0) {
-      setStep(3,'done');
-      document.getElementById('jira-result').style.display='';
-      document.getElementById('jira-result').innerHTML=`<p style="font-size:13px;color:var(--text-secondary)">Geen nieuwe issues — alles al gesynchroniseerd.</p>`;
-      document.querySelector('.modal-actions').innerHTML=`<button class="btn-primary" onclick="closeModal();loadAll()">✓ Sluiten</button>`;
-      return;
-    }
-
-    const maxPos = state.tasks.length ? Math.max(...state.tasks.map(t=>t.position||0)) : 0;
-    const inserted = [], failed = [];
-
-    for(let i=0;i<newIssues.length;i++){
-      const issue = newIssues[i];
-      try {
-        await sb('tasks', {method:'POST', body:{
-          list_id: targetListId,
-          text: issue.summary,
-          done: false,
-          priority: issue.priority || 'laag',
-          position: maxPos + i + 1,
-          jira_key: issue.key,
-          kanban_status: issue.status || 'todo',
-          due_date: issue.due_date || null
-        }, prefer:'return=minimal'});
-        inserted.push(issue);
-      } catch(e) { failed.push(issue.key); }
-    }
-
-    setStep(3,'done');
-    const resultEl = document.getElementById('jira-result');
-    resultEl.style.display='';
-    resultEl.innerHTML=`<div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;line-height:1.7;max-height:200px;overflow-y:auto">
-      <div style="color:#1D9E75;font-weight:500;margin-bottom:6px">✓ ${inserted.length} taken toegevoegd aan "${targetListName}"</div>
-      ${inserted.map(i=>`<div style="color:var(--text-secondary)"><span style="color:var(--text-tertiary);font-family:monospace;font-size:11px">${i.key}</span> ${i.summary}</div>`).join('')}
-      ${failed.length?`<div style="color:#A32D2D;margin-top:4px">⚠ ${failed.length} mislukt: ${failed.join(', ')}</div>`:''}
-    </div>`;
-    document.querySelector('.modal-actions').innerHTML=`<button class="btn-primary" onclick="closeModal();loadAll()">✓ Sluiten & verversen</button>`;
-
-  } catch(err) {
-    setStep(1,'error');
-    document.getElementById('jira-result').style.display='';
-    document.getElementById('jira-result').innerHTML=`<div style="color:#A32D2D;font-size:12px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:10px 12px">${err.message}</div>`;
-    document.querySelector('.modal-actions').innerHTML=`<button class="btn-cancel" onclick="closeModal()">Sluiten</button>`;
-  }
 }
 // ── Weekoverzicht exporteren ───────────────────────────────────
 let exportWeekOffset = 0;

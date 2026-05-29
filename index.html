@@ -489,6 +489,59 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
 .view-btn.active{background:var(--bg-primary);color:var(--cw-blue);box-shadow:0 1px 3px rgba(0,0,0,.1);}
 [data-theme="dark"] .view-btn.active,[data-theme="navy"] .view-btn.active{background:var(--bg-tertiary);color:var(--cw-coral);}
 
+/* Agenda */
+.agenda-view{display:flex;flex-direction:column;height:100%;background:var(--bg-page);}
+.agenda-toolbar{display:flex;align-items:center;gap:8px;padding:12px 22px 8px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.agenda-nav-btn{width:28px;height:28px;border:1px solid var(--border);background:var(--bg-primary);border-radius:var(--radius-md);cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.agenda-nav-btn:hover{background:var(--bg-hover);}
+.agenda-period-label{font-size:13px;font-weight:600;color:var(--text-primary);min-width:160px;text-align:center;}
+.agenda-mode-toggle{display:flex;gap:2px;background:var(--bg-hover);border-radius:var(--radius-md);padding:2px;margin-left:auto;}
+.agenda-mode-btn{font-size:11px;padding:3px 10px;border:none;background:none;cursor:pointer;color:var(--text-tertiary);border-radius:4px;font-family:var(--font);font-weight:500;transition:all .1s;}
+.agenda-mode-btn.active{background:var(--bg-primary);color:var(--cw-blue);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+[data-theme="dark"] .agenda-mode-btn.active,[data-theme="navy"] .agenda-mode-btn.active{background:var(--bg-tertiary);color:var(--cw-coral);}
+.agenda-body{flex:1;overflow-y:auto;padding:14px 22px;}
+
+/* Agenda week */
+.agenda-week{display:flex;flex-direction:column;gap:10px;}
+.agenda-day{border-radius:var(--radius-lg);background:var(--bg-primary);border:1px solid var(--border);overflow:hidden;}
+.agenda-day-header{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border);}
+.agenda-day-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-tertiary);width:30px;}
+.agenda-day-date{font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;width:28px;text-align:center;}
+.agenda-day-date.today{background:var(--cw-blue);color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
+[data-theme="dark"] .agenda-day-date.today,[data-theme="navy"] .agenda-day-date.today{background:var(--cw-coral);}
+.agenda-day-label{font-size:11px;color:var(--text-tertiary);}
+.agenda-day-tasks{display:flex;flex-direction:column;gap:1px;}
+.agenda-task-row{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);}
+.agenda-task-row:last-child{border-bottom:none;}
+.agenda-task-row:hover{background:var(--bg-hover);}
+.agenda-task-row.done-task .agenda-task-text{text-decoration:line-through;color:var(--text-tertiary);}
+.agenda-task-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;}
+.agenda-task-check:hover{border-color:var(--cw-blue);}
+.agenda-task-check.checked{background:var(--cw-blue);border-color:var(--cw-blue);}
+[data-theme="dark"] .agenda-task-check.checked,[data-theme="navy"] .agenda-task-check.checked{background:var(--cw-coral);border-color:var(--cw-coral);}
+.agenda-task-text{font-size:13px;color:var(--text-primary);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agenda-task-meta{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.agenda-task-list{font-size:10.5px;color:var(--text-tertiary);background:var(--bg-hover);padding:2px 7px;border-radius:8px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.agenda-prio-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.agenda-empty-day{padding:12px 14px;font-size:12px;color:var(--text-tertiary);font-style:italic;}
+
+/* Agenda month */
+.agenda-month{display:flex;flex-direction:column;gap:0;}
+.agenda-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.agenda-month-header-row{display:contents;}
+.agenda-month-dow{background:var(--bg-secondary);padding:6px 4px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);}
+.agenda-month-cell{background:var(--bg-primary);min-height:90px;padding:6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .1s;}
+.agenda-month-cell:hover{background:var(--bg-hover);}
+.agenda-month-cell.other-month{background:var(--bg-secondary);opacity:.6;}
+.agenda-month-cell.today-cell{background:var(--accent-soft);}
+.agenda-month-day-num{font-size:12px;font-weight:600;color:var(--text-secondary);width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;}
+.agenda-month-day-num.today-num{background:var(--cw-blue);color:#fff;}
+[data-theme="dark"] .agenda-month-day-num.today-num,[data-theme="navy"] .agenda-month-day-num.today-num{background:var(--cw-coral);}
+.agenda-month-task-chip{font-size:10.5px;padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2.5px solid var(--cw-blue);}
+[data-theme="dark"] .agenda-month-task-chip,[data-theme="navy"] .agenda-month-task-chip{border-left-color:var(--cw-coral);}
+.agenda-month-task-chip.done-chip{opacity:.5;text-decoration:line-through;}
+.agenda-month-more{font-size:10px;color:var(--text-tertiary);padding:0 4px;}
+
 /* Kanban */
 .kanban-view{display:flex;gap:14px;padding:14px 22px;overflow-x:auto;height:100%;align-items:flex-start;background:var(--bg-page);}
 .kanban-col{flex:0 0 280px;background:var(--bg-secondary);border-radius:var(--radius-lg);border:1px solid var(--border);display:flex;flex-direction:column;max-height:calc(100vh - 180px);}
@@ -774,7 +827,7 @@ body.sb-resizing *{cursor:col-resize !important;user-select:none !important;}
       </button>
     </div>
     <div class="version-bar">
-      <span class="version-label">v1.4.11</span>
+      <span class="version-label">v1.4.12</span>
       <button class="info-btn" onclick="openReleaseNotes()" title="Release notes">i</button>
     </div>
   </div>
@@ -823,7 +876,7 @@ const COLORS=[
 ];
 const PO={high:0,medium:1,low:2,none:3};
 const PL={high:'Hoog',medium:'Medium',low:'Laag',none:''};
-let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null,viewMode:'list',globalAddOpen:false,globalAddListId:null};
+let state={lists:[],tasks:[],activeListId:null,globalView:null,filter:'all',search:'',editingListName:false,loading:true,expanded:{},expandedTasks:{},inlineAddOpen:false,inlineAddPrio:'none',waitingFilter:null,viewMode:'list',globalAddOpen:false,globalAddListId:null,agendaMode:'week',agendaOffset:0};
 let todayTasks=new Set(JSON.parse(localStorage.getItem('today_tasks')||'[]'));
 function saveTodayTasks(){localStorage.setItem('today_tasks',JSON.stringify([...todayTasks]));}
 function toggleToday(id,e){
@@ -1203,6 +1256,9 @@ function renderTopbar(){
       <button class="view-btn" id="view-kanban-btn" onclick="setViewMode('kanban')" title="Kanban">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="3.5" height="12" rx="1"/><rect x="5.25" y="1" width="3.5" height="8" rx="1"/><rect x="9.5" y="1" width="3.5" height="10" rx="1"/></svg>
       </button>
+      <button class="view-btn" id="view-agenda-btn" onclick="setViewMode('agenda')" title="Agenda">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1.5"/><line x1="1" y1="5.5" x2="13" y2="5.5"/><line x1="4" y1="1" x2="4" y2="3.5"/><line x1="10" y1="1" x2="10" y2="3.5"/><line x1="4" y1="8" x2="5" y2="8"/><line x1="7" y1="8" x2="8" y2="8"/><line x1="10" y1="8" x2="11" y2="8"/></svg>
+      </button>
     </div></div>`;
     document.getElementById('filter-row').innerHTML=`<input class="search-input" style="margin-left:0" placeholder="${tr('searchPH')}" value="${esc(state.search)}" oninput="setSearch(this.value)"/>
     <button class="export-btn" onclick="openExportModal()"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10v2h10v-2"/><path d="M7 1v7"/><polyline points="4,5 7,8 10,5"/></svg>Export</button>`;
@@ -1223,6 +1279,9 @@ function renderTopbar(){
       </button>
       <button class="view-btn" id="view-kanban-btn" onclick="setViewMode('kanban')" title="Kanban">
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="3.5" height="12" rx="1"/><rect x="5.25" y="1" width="3.5" height="8" rx="1"/><rect x="9.5" y="1" width="3.5" height="10" rx="1"/></svg>
+      </button>
+      <button class="view-btn" id="view-agenda-btn" onclick="setViewMode('agenda')" title="Agenda">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="12" height="11" rx="1.5"/><line x1="1" y1="5.5" x2="13" y2="5.5"/><line x1="4" y1="1" x2="4" y2="3.5"/><line x1="10" y1="1" x2="10" y2="3.5"/><line x1="4" y1="8" x2="5" y2="8"/><line x1="7" y1="8" x2="8" y2="8"/><line x1="10" y1="8" x2="11" y2="8"/></svg>
       </button>
     </div></div></div></div>`;
   }
@@ -1419,6 +1478,7 @@ function renderTasks(){
     savedIbp=document.getElementById('inline-task-ibp')?.value||'none';
   }
   if(state.viewMode==='kanban'){renderKanban();return;}
+  if(state.viewMode==='agenda'){renderAgenda();return;}
   let personPills='';
   if(state.globalView==='waiting'){
     const allWaiting=state.tasks.filter(t=>t.waiting_for&&!t.done);
@@ -1517,10 +1577,12 @@ async function submitGlobalTask(){
 }
 function setViewMode(mode){
   state.viewMode=mode;
+  state.agendaMode=state.agendaMode||'week';
   renderTasks();
   setTimeout(()=>{
     document.getElementById('view-list-btn')?.classList.toggle('active',mode==='list');
     document.getElementById('view-kanban-btn')?.classList.toggle('active',mode==='kanban');
+    document.getElementById('view-agenda-btn')?.classList.toggle('active',mode==='agenda');
   },0);
 }
 function setGlobalView(v){state.globalView=v;state.activeListId=null;state.search='';state.editingListName=false;state.inlineAddOpen=false;state.waitingFilter=null;closeSidebar();render();}
@@ -1801,7 +1863,12 @@ function openConfirmModal(title,msg,onConfirm){
 }
 function openReleaseNotes(){
   const releases=[
-    {v:'1.4.11',date:'2026-05-27',latest:true,items:[
+    {v:'1.4.12',date:'2026-05-27',latest:true,items:[
+      'Agenda-weergave toegevoegd (week + maand toggle)',
+      'Toont taken met deadline + taken zonder datum op vandaag',
+      'Navigeer voor/achteruit per week of maand',
+    ]},
+    {v:'1.4.11',date:'2026-05-27',items:[
       'Jira → Tasks: geen API-key meer nodig, opent claude.ai met kant-en-klare prompt',
     ]},
     {v:'1.4.10',date:'2026-05-27',items:[
@@ -2279,6 +2346,183 @@ function cycleKanbanStatus(id, e){
   const t=state.tasks.find(t=>t.id===id);if(!t)return;
   const next={todo:'inprogress',inprogress:'done',done:'todo'};
   setKanbanStatus(id, next[t.kanban_status||'todo']);
+}
+
+// ── Agenda weergave ────────────────────────────────────────────
+function renderAgenda(){
+  const area=document.getElementById('task-area');
+  const mode=state.agendaMode||'week';
+  const offset=state.agendaOffset||0;
+
+  // Gather relevant tasks: all tasks with due_date OR tasks due today/this week
+  const today=new Date(); today.setHours(0,0,0,0);
+
+  function getListName(listId){
+    const l=state.lists.find(x=>x.id===listId);
+    return l?l.name:'';
+  }
+  function getListColor(listId){
+    const l=state.lists.find(x=>x.id===listId);
+    return l?l.color:'#888';
+  }
+  function prioDotColor(p){
+    if(p==='hoog'||p==='high')return '#dc2626';
+    if(p==='medium')return '#d97706';
+    if(p==='laag'||p==='low')return '#16a34a';
+    return 'transparent';
+  }
+
+  // Filter tasks relevant to current list/global view
+  let baseTasks=state.tasks;
+  if(state.activeListId){
+    // include sublists
+    const childIds=getAllChildListIds(state.activeListId);
+    baseTasks=state.tasks.filter(t=>t.list_id===state.activeListId||childIds.includes(t.list_id));
+  }
+
+  function taskRow(t){
+    const listName=getListName(t.list_id);
+    const listColor=getListColor(t.list_id);
+    const dotColor=prioDotColor(t.priority);
+    return `<div class="agenda-task-row ${t.done?'done-task':''}" onclick="openTaskDetail('${t.id}')">
+      <div class="agenda-task-check ${t.done?'checked':''}" onclick="event.stopPropagation();toggleDone('${t.id}')">
+        ${t.done?`<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg>`:''}
+      </div>
+      <span class="agenda-task-text">${esc(t.text)}</span>
+      <span class="agenda-task-meta">
+        ${dotColor!=='transparent'?`<span class="agenda-prio-dot" style="background:${dotColor}"></span>`:''}
+        ${state.globalView||!state.activeListId?`<span class="agenda-task-list" style="border-left:2.5px solid ${listColor}">${esc(listName)}</span>`:''}
+      </span>
+    </div>`;
+  }
+
+  if(mode==='week'){
+    // Week: Mon–Sun of current week + offset
+    const mon=new Date(today);
+    const dayOfWeek=today.getDay();
+    mon.setDate(today.getDate()-(dayOfWeek===0?6:dayOfWeek-1)+offset*7);
+    const days=[];
+    for(let i=0;i<7;i++){
+      const d=new Date(mon);d.setDate(mon.getDate()+i);
+      days.push(d);
+    }
+    const sun=days[6];
+    const label=mon.toLocaleDateString('nl-NL',{day:'numeric',month:'long'})+' – '+sun.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
+
+    const dayNames=['Ma','Di','Wo','Do','Vr','Za','Zo'];
+    const monthNames=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+    const html=days.map((d,i)=>{
+      const isToday=d.toDateString()===today.toDateString();
+      const dStr=d.toISOString().slice(0,10);
+
+      // Tasks with due_date on this day
+      const dueTasks=baseTasks.filter(t=>t.due_date&&t.due_date.slice(0,10)===dStr);
+      // Tasks without due_date that are "today" (only show on today's cell)
+      const undatedTodayTasks=isToday?baseTasks.filter(t=>!t.due_date&&!t.done):[];
+      const allTasks=[...dueTasks,...undatedTodayTasks];
+
+      return `<div class="agenda-day">
+        <div class="agenda-day-header">
+          <span class="agenda-day-name">${dayNames[i]}</span>
+          <span class="agenda-day-date ${isToday?'today':''}">${d.getDate()}</span>
+          <span class="agenda-day-label">${monthNames[d.getMonth()]}</span>
+          ${allTasks.length?`<span style="margin-left:auto;font-size:10.5px;color:var(--text-tertiary)">${allTasks.filter(t=>!t.done).length} open</span>`:''}
+        </div>
+        <div class="agenda-day-tasks">
+          ${allTasks.length?allTasks.map(taskRow).join(''):`<div class="agenda-empty-day">Geen taken</div>`}
+        </div>
+      </div>`;
+    }).join('');
+
+    area.innerHTML=`<div class="agenda-view">
+      <div class="agenda-toolbar">
+        <button class="agenda-nav-btn" onclick="agendaNav(-1)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8,2 4,6 8,10"/></svg>
+        </button>
+        <span class="agenda-period-label">${label}</span>
+        <button class="agenda-nav-btn" onclick="agendaNav(1)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4,2 8,6 4,10"/></svg>
+        </button>
+        <button class="agenda-nav-btn" onclick="agendaReset()" style="font-size:11px;width:auto;padding:0 8px" title="Vandaag">Vandaag</button>
+        <div class="agenda-mode-toggle">
+          <button class="agenda-mode-btn active" onclick="setAgendaMode('week')">Week</button>
+          <button class="agenda-mode-btn" onclick="setAgendaMode('month')">Maand</button>
+        </div>
+      </div>
+      <div class="agenda-body"><div class="agenda-week">${html}</div></div>
+    </div>`;
+
+  } else {
+    // Month view
+    const refDate=new Date(today.getFullYear(),today.getMonth()+offset,1);
+    const monthNames=['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+    const label=monthNames[refDate.getMonth()]+' '+refDate.getFullYear();
+    const firstDay=new Date(refDate.getFullYear(),refDate.getMonth(),1);
+    const lastDay=new Date(refDate.getFullYear(),refDate.getMonth()+1,0);
+    // Start from Monday before first day
+    const startDay=new Date(firstDay);
+    const fd=firstDay.getDay();
+    startDay.setDate(firstDay.getDate()-(fd===0?6:fd-1));
+
+    const cells=[];
+    const cur=new Date(startDay);
+    while(cells.length<42){
+      cells.push(new Date(cur));
+      cur.setDate(cur.getDate()+1);
+    }
+
+    const dowHeaders=['Ma','Di','Wo','Do','Vr','Za','Zo'].map(d=>`<div class="agenda-month-dow">${d}</div>`).join('');
+
+    const cellsHtml=cells.map(d=>{
+      const isOther=d.getMonth()!==refDate.getMonth();
+      const isToday=d.toDateString()===today.toDateString();
+      const dStr=d.toISOString().slice(0,10);
+      const dayTasks=baseTasks.filter(t=>t.due_date&&t.due_date.slice(0,10)===dStr);
+      const todayUndated=isToday?baseTasks.filter(t=>!t.due_date&&!t.done):[];
+      const allDay=[...dayTasks,...todayUndated];
+      const show=allDay.slice(0,3);
+      const more=allDay.length-show.length;
+      return `<div class="agenda-month-cell ${isOther?'other-month':''} ${isToday?'today-cell':''}">
+        <div class="agenda-month-day-num ${isToday?'today-num':''}">${d.getDate()}</div>
+        ${show.map(t=>`<div class="agenda-month-task-chip ${t.done?'done-chip':''}" title="${esc(t.text)}">${esc(t.text)}</div>`).join('')}
+        ${more>0?`<div class="agenda-month-more">+${more} meer</div>`:''}
+      </div>`;
+    }).join('');
+
+    area.innerHTML=`<div class="agenda-view">
+      <div class="agenda-toolbar">
+        <button class="agenda-nav-btn" onclick="agendaNav(-1)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8,2 4,6 8,10"/></svg>
+        </button>
+        <span class="agenda-period-label">${label}</span>
+        <button class="agenda-nav-btn" onclick="agendaNav(1)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4,2 8,6 4,10"/></svg>
+        </button>
+        <button class="agenda-nav-btn" onclick="agendaReset()" style="font-size:11px;width:auto;padding:0 8px" title="Vandaag">Vandaag</button>
+        <div class="agenda-mode-toggle">
+          <button class="agenda-mode-btn" onclick="setAgendaMode('week')">Week</button>
+          <button class="agenda-mode-btn active" onclick="setAgendaMode('month')">Maand</button>
+        </div>
+      </div>
+      <div class="agenda-body">
+        <div class="agenda-month-grid">
+          ${dowHeaders}
+          ${cellsHtml}
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
+function setAgendaMode(mode){state.agendaMode=mode;state.agendaOffset=0;renderAgenda();}
+function agendaNav(dir){state.agendaOffset=(state.agendaOffset||0)+dir;renderAgenda();}
+function agendaReset(){state.agendaOffset=0;renderAgenda();}
+
+// ── getAllChildListIds helper (may already exist) ────────────────
+function getAllChildListIds(listId){
+  const children=state.lists.filter(l=>l.parent_id===listId).map(l=>l.id);
+  return children.reduce((acc,id)=>[...acc,...getAllChildListIds(id)],[...children]);
 }
 
 function renderKanban(){
